@@ -892,7 +892,7 @@ window.addEventListener('load', async () => {
 });
 
 async function initialize() {
-  setLoading('Microsoft 認証を初期化中...');
+  setLoading('起動中...');
   
   // MSAL.js 初期化
   msalInstance = new msal.PublicClientApplication(msalConfig);
@@ -922,27 +922,33 @@ async function initialize() {
         return;
       }
     } else {
-      // 未ログイン → リダイレクトでログイン
-      setLoading('Microsoft 365 にログインします...');
-      await msalInstance.loginRedirect({ scopes: scopes });
-      return;
+      // 未ログイン → ssoSilent を試行（高速）
+      try {
+        const ssoResponse = await msalInstance.ssoSilent({ scopes: scopes });
+        accessToken = ssoResponse.accessToken;
+        currentUser = ssoResponse.account;
+        msalInstance.setActiveAccount(ssoResponse.account);
+      } catch (err) {
+        // ssoSilentも失敗 → リダイレクトでログイン
+        setLoading('Microsoft 365 にログインします...');
+        await msalInstance.loginRedirect({ scopes: scopes });
+        return;
+      }
     }
   }
   
   // ユーザー情報表示
   document.getElementById('user-info').textContent = currentUser.name || currentUser.username;
   
-  // OneDrive準備
-  setLoading('業務用OneDriveに接続中...');
+  // === ここから並列処理で高速化 ===
+  setLoading('データを読み込み中...');
+  
+  // OneDrive準備と工事一覧読み込みを並列実行
+  // （prepareOneDriveが先に終わる必要があるので、その後に工事一覧）
   await prepareOneDrive();
   
-  // 工事一覧を読み込み
-  setLoading('工事一覧を読み込み中...');
-  await loadKojiList();
-  
-  // 各工事の書類状況を取得
-  setLoading('書類状況を確認中...');
-  await loadAllDocStatus();
+  // 工事一覧と書類状況を「集約API」で一気に取得
+  await loadAllDataFast();
   
   // 画面表示
   renderList();
@@ -950,6 +956,76 @@ async function initialize() {
   
   // 起動完了
   document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+// 高速読み込み：工事一覧+書類状況を1〜2回のAPI呼び出しで取得
+async function loadAllDataFast() {
+  try {
+    // 1. 工事一覧JSONと、工事書類フォルダ配下の全コンテンツを並列取得
+    const [kojiListResult, foldersResult] = await Promise.all([
+      // 工事一覧JSONを取得（既存ロジック）
+      loadKojiList(),
+      // 工事書類フォルダの直下の子要素（=工事フォルダ一覧）を取得
+      graphApi('GET', `/drives/${sharedDriveId}/items/${sharedRootFolderId}/children?$expand=children`)
+        .catch(err => {
+          console.warn('集約取得失敗、個別取得にフォールバック', err);
+          return null;
+        })
+    ]);
+    
+    // 2. foldersResult から各工事フォルダの中身を取り出して docFiles に反映
+    if (foldersResult && foldersResult.value) {
+      // 工事名 → フォルダ情報のマップ
+      const folderMap = {};
+      for (const item of foldersResult.value) {
+        if (item.folder) {
+          folderMap[item.name] = item;
+        }
+      }
+      
+      // 各工事の書類状況を反映
+      docFiles = {};
+      kojiFolderIds = {};
+      for (const koji of kojiList) {
+        const folderName = sanitizeFolderName(koji.name);
+        const folder = folderMap[folderName];
+        if (folder) {
+          kojiFolderIds[koji.id] = folder.id;
+          // フォルダの中身（$expand=children で同時取得済み）
+          if (folder.children) {
+            for (const file of folder.children) {
+              for (const docType of DOC_TYPES) {
+                if (file.name.startsWith(docType.filePrefix)) {
+                  const fileKey = `${koji.id}-${docType.key}`;
+                  docFiles[fileKey] = {
+                    fileId: file.id,
+                    fileName: file.name,
+                    size: file.size,
+                    modified: file.lastModifiedDateTime
+                  };
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // 集約取得に失敗した場合は、従来の方法でフォールバック
+      await loadAllDocStatusParallel();
+    }
+  } catch (err) {
+    console.error('データ読み込みエラー:', err);
+    // フォールバック：従来の逐次取得
+    await loadAllDocStatus();
+  }
+}
+
+// 並列版の書類状況取得（フォールバック用）
+async function loadAllDocStatusParallel() {
+  docFiles = {};
+  // 全工事を並列で処理
+  await Promise.all(kojiList.map(koji => loadKojiDocStatus(koji)));
 }
 
 function setLoading(text) {
@@ -1593,8 +1669,7 @@ async function saveNewKoji() {
 async function refreshAllKoji() {
   try {
     showToast('更新中...');
-    await loadKojiList();
-    await loadAllDocStatus();
+    await loadAllDataFast();
     renderList();
     renderStats();
     showToast('更新しました');
