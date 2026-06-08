@@ -510,6 +510,34 @@
   
   .upload-input { display: none; }
   
+  /* === ステータス変更プルダウン（色付き） === */
+  .status-select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .status-select.status-uketu {
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    border-color: #E5C7A0;
+  }
+  .status-select.status-shiko {
+    background: #E6F1FB;
+    color: #0C447C;
+    border-color: #BCD9F2;
+  }
+  .status-select.status-kanko {
+    background: #E1F5EE;
+    color: #085041;
+    border-color: #B5DDCB;
+  }
+  
   /* === 確認ダイアログ === */
   .confirm-dialog {
     background: var(--bg-card);
@@ -1487,16 +1515,16 @@ function openDetailModal(id) {
       cls = 'current'; icon = '●';
     }
     return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.5;' : ''}">
-      <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;">${icon}</span>
-      ${cls === 'current' ? '<strong>' + status + '</strong>' : status}
+      <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;width:14px;">${icon}</span>
+      ${buildStatusPill(status)}
     </div>`;
   }).join('');
   
   // ステータス変更プルダウンを追加
   const statusSelector = `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-      <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">ステータス変更</label>
-      <select id="status-change-select" onchange="changeKojiStatus('${koji.id}', this.value)" style="width:100%;padding:6px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:6px;background:white;font-family:inherit;">
+      <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:6px;">ステータス変更</label>
+      <select id="status-change-select" onchange="changeKojiStatus('${koji.id}', this.value)" class="status-select status-${koji.status === '受注' ? 'uketu' : koji.status === '施工中' ? 'shiko' : 'kanko'}">
         <option value="受注" ${koji.status === '受注' ? 'selected' : ''}>受注</option>
         <option value="施工中" ${koji.status === '施工中' ? 'selected' : ''}>施工中</option>
         <option value="完工" ${koji.status === '完工' ? 'selected' : ''}>完工</option>
@@ -1696,7 +1724,7 @@ async function changeKojiStatus(kojiId, newStatus) {
   // 確認ダイアログ
   const ok = await showConfirm({
     title: 'ステータスの変更',
-    message: `「${koji.name}」のステータスを\n「${oldStatus}」→「${newStatus}」に変更します。\nよろしいですか?`,
+    messageHtml: `「${escapeHtml(koji.name)}」のステータスを変更します<div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;">${buildStatusPill(oldStatus)}<span style="color:var(--text-tertiary);">→</span>${buildStatusPill(newStatus)}</div>`,
     okText: '変更する',
     cancelText: 'キャンセル'
   });
@@ -1754,15 +1782,15 @@ function redrawTimeline(koji) {
       cls = 'current'; icon = '●';
     }
     return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.5;' : ''}">
-      <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;">${icon}</span>
-      ${cls === 'current' ? '<strong>' + status + '</strong>' : status}
+      <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;width:14px;">${icon}</span>
+      ${buildStatusPill(status)}
     </div>`;
   }).join('');
   
   const statusSelector = `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-      <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">ステータス変更</label>
-      <select id="status-change-select" onchange="changeKojiStatus('${koji.id}', this.value)" style="width:100%;padding:6px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:6px;background:white;font-family:inherit;">
+      <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:6px;">ステータス変更</label>
+      <select id="status-change-select" onchange="changeKojiStatus('${koji.id}', this.value)" class="status-select status-${koji.status === '受注' ? 'uketu' : koji.status === '施工中' ? 'shiko' : 'kanko'}">
         <option value="受注" ${koji.status === '受注' ? 'selected' : ''}>受注</option>
         <option value="施工中" ${koji.status === '施工中' ? 'selected' : ''}>施工中</option>
         <option value="完工" ${koji.status === '完工' ? 'selected' : ''}>完工</option>
@@ -2152,8 +2180,14 @@ function showToast(text, type = '') {
   }, 3000);
 }
 
+// ステータス用の色付きピルHTML
+function buildStatusPill(status) {
+  const cls = status === '受注' ? 's-uketu' : status === '施工中' ? 's-shiko' : 's-kanko';
+  return `<span class="s-pill ${cls}">${escapeHtml(status)}</span>`;
+}
+
 // 独自確認ダイアログ（Promiseベース）
-// options: { title, message, okText, cancelText, type ('warning' or 'danger') }
+// options: { title, message, messageHtml, okText, cancelText, type ('warning' or 'danger') }
 function showConfirm(options) {
   return new Promise((resolve) => {
     const modal = document.getElementById('confirm-modal');
@@ -2164,7 +2198,11 @@ function showConfirm(options) {
     const cancelBtn = document.getElementById('confirm-cancel-btn');
     
     titleEl.textContent = options.title || '確認';
-    messageEl.textContent = options.message || '';
+    if (options.messageHtml) {
+      messageEl.innerHTML = options.messageHtml;
+    } else {
+      messageEl.textContent = options.message || '';
+    }
     okBtn.textContent = options.okText || 'OK';
     cancelBtn.textContent = options.cancelText || 'キャンセル';
     
