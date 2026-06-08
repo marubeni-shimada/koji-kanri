@@ -510,32 +510,21 @@
   
   .upload-input { display: none; }
   
-  /* === ステータス変更プルダウン（色付き） === */
+  /* === ステータス変更プルダウン === */
   .status-select {
     width: 100%;
     padding: 8px 10px;
     font-size: 13px;
-    font-weight: 500;
     border-radius: 8px;
     border: 1px solid var(--border-strong);
+    background: white;
+    color: var(--text-primary);
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: border-color 0.15s;
   }
-  .status-select.status-uketu {
-    background: var(--warning-bg);
-    color: var(--warning-fg);
-    border-color: #E5C7A0;
-  }
-  .status-select.status-shiko {
-    background: #E6F1FB;
-    color: #0C447C;
-    border-color: #BCD9F2;
-  }
-  .status-select.status-kanko {
-    background: #E1F5EE;
-    color: #085041;
-    border-color: #B5DDCB;
+  .status-select:hover {
+    border-color: var(--text-secondary);
   }
   
   /* === 確認ダイアログ === */
