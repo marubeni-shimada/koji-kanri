@@ -309,6 +309,23 @@
     font-size: 8px;
   }
   
+  /* === 完成工事ヘッダー === */
+  .completed-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .completed-header:hover {
+    background: var(--bg-secondary);
+  }
+  
   /* === モーダル === */
   .modal-overlay {
     position: fixed;
@@ -708,7 +725,30 @@
     <span>凡例:</span>
     <span><span class="doc-dot has">●</span> あり</span>
     <span><span class="doc-dot missing">●</span> なし</span>
-    <span style="margin-left: auto; opacity: 0.7;">契=契約書 / 注=注文書 / 請=請書 / 台=工事台帳 / 求=請求書</span>
+    <span style="margin-left: auto; opacity: 0.7;">契=契約書/注文書 / 請=注文請書 / 予=実行予算 / 登=工事登録用紙</span>
+  </div>
+
+  <!-- 完成工事セクション（折りたたみ） -->
+  <div id="completed-section" style="margin-top: 24px; display: none;">
+    <div class="completed-header" onclick="toggleCompletedSection()">
+      <span id="completed-arrow" style="font-size:11px;color:var(--text-secondary);width:14px;display:inline-block;">▶</span>
+      <span style="font-size:13px;font-weight:500;">完成工事</span>
+      <span id="completed-count" style="font-size:11px;color:var(--text-secondary);">0件</span>
+    </div>
+    <div id="completed-table-wrap" style="display:none;margin-top:8px;">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th>工事名</th>
+            <th class="hide-mobile">工事番号</th>
+            <th>ステータス</th>
+            <th>書類</th>
+            <th class="hide-mobile">担当</th>
+          </tr>
+        </thead>
+        <tbody id="koji-tbody-completed"></tbody>
+      </table>
+    </div>
   </div>
 </main>
 
@@ -872,12 +912,29 @@ if (window.pdfjsLib) {
 // グローバル状態
 // ============================================================
 const DOC_TYPES = [
-  { key: 'keiyaku', label: '契約書', short: '契', filePrefix: '契約書' },
-  { key: 'chumon', label: '注文書', short: '注', filePrefix: '注文書' },
-  { key: 'uke',    label: '請書',   short: '請', filePrefix: '請書' },
-  { key: 'daicho', label: '工事台帳', short: '台', filePrefix: '工事台帳' },
-  { key: 'seikyu', label: '請求書', short: '求', filePrefix: '請求書' }
+  { key: 'keiyaku_chumon', label: '契約書/注文書', short: '契', filePrefix: '契約書注文書' },
+  { key: 'uke',            label: '注文請書',     short: '請', filePrefix: '注文請書' },
+  { key: 'yosan',          label: '実行予算',     short: '予', filePrefix: '実行予算' },
+  { key: 'toroku',         label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
 ];
+
+// ファイル名から書類タイプを判定（DOC_TYPESに対するマッチング）
+function matchDocType(fileName) {
+  // 契約書/注文書は「契約書」「注文書」「契約書注文書」のいずれでもOK
+  if (fileName.startsWith('契約書注文書') || 
+      fileName.startsWith('契約書') || 
+      fileName.startsWith('注文書')) {
+    return DOC_TYPES.find(d => d.key === 'keiyaku_chumon');
+  }
+  // 他は通常通り
+  for (const docType of DOC_TYPES) {
+    if (docType.key === 'keiyaku_chumon') continue;
+    if (fileName.startsWith(docType.filePrefix)) {
+      return docType;
+    }
+  }
+  return null;
+}
 
 let msalInstance = null;
 let accessToken = null;
@@ -1013,17 +1070,15 @@ async function loadAllDataFast() {
           // フォルダの中身（$expand=children で同時取得済み）
           if (folder.children) {
             for (const file of folder.children) {
-              for (const docType of DOC_TYPES) {
-                if (file.name.startsWith(docType.filePrefix)) {
-                  const fileKey = `${koji.id}-${docType.key}`;
-                  docFiles[fileKey] = {
-                    fileId: file.id,
-                    fileName: file.name,
-                    size: file.size,
-                    modified: file.lastModifiedDateTime
-                  };
-                  break;
-                }
+              const docType = matchDocType(file.name);
+              if (docType) {
+                const fileKey = `${koji.id}-${docType.key}`;
+                docFiles[fileKey] = {
+                  fileId: file.id,
+                  fileName: file.name,
+                  size: file.size,
+                  modified: file.lastModifiedDateTime
+                };
               }
             }
           }
@@ -1234,17 +1289,15 @@ async function loadKojiDocStatus(koji) {
     const result = await graphApi('GET', `/drives/${sharedDriveId}/items/${folderId}/children`);
     
     for (const file of result.value) {
-      for (const docType of DOC_TYPES) {
-        if (file.name.startsWith(docType.filePrefix)) {
-          const fileKey = `${koji.id}-${docType.key}`;
-          docFiles[fileKey] = {
-            fileId: file.id,
-            fileName: file.name,
-            size: file.size,
-            modified: file.lastModifiedDateTime
-          };
-          break;
-        }
+      const docType = matchDocType(file.name);
+      if (docType) {
+        const fileKey = `${koji.id}-${docType.key}`;
+        docFiles[fileKey] = {
+          fileId: file.id,
+          fileName: file.name,
+          size: file.size,
+          modified: file.lastModifiedDateTime
+        };
       }
     }
   } catch (err) {
@@ -1284,32 +1337,64 @@ function renderList() {
            (k.field || '').toLowerCase().includes(searchTerm);
   });
   
-  const tbody = document.getElementById('koji-tbody');
+  // 未成工事（受注、施工中）と完成工事（完工）に分ける
+  const active = filtered.filter(k => k.status !== '完工');
+  const completed = filtered.filter(k => k.status === '完工');
   
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px 20px;color:var(--text-tertiary);">該当する工事がありません</td></tr>`;
-    return;
+  // 未成工事の描画
+  const activeTbody = document.getElementById('koji-tbody');
+  if (active.length === 0) {
+    activeTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px 20px;color:var(--text-tertiary);">未成工事はありません</td></tr>`;
+  } else {
+    activeTbody.innerHTML = active.map(k => buildKojiRow(k)).join('');
   }
   
-  tbody.innerHTML = filtered.map(k => {
-    const hasMissing = DOC_TYPES.some(d => getDocStatus(k, d.key) === 'missing');
-    const statusClass = k.status === '受注' ? 's-uketu' : k.status === '施工中' ? 's-shiko' : 's-kanko';
-    
-    const dotsHtml = DOC_TYPES.map(d => {
-      const status = getDocStatus(k, d.key);
-      return `<span class="doc-dot ${status}" title="${d.label}: ${status === 'has' ? 'あり' : 'なし'}">${d.short}</span>`;
-    }).join('');
-    
-    return `
-      <tr class="koji-row ${hasMissing ? 'alert' : ''}" onclick="openDetailModal('${k.id}')">
-        <td style="font-weight:${hasMissing ? '500' : '400'};">${escapeHtml(k.name)}</td>
-        <td class="hide-mobile"><span class="koji-num">${escapeHtml(k.number || '-')}</span></td>
-        <td><span class="s-pill ${statusClass}">${escapeHtml(k.status || '')}</span></td>
-        <td><div class="doc-dots">${dotsHtml}</div></td>
-        <td class="hide-mobile" style="color:var(--text-secondary);font-size:12px;">${escapeHtml(k.field || '-')}</td>
-      </tr>
-    `;
+  // 完成工事の描画
+  const completedTbody = document.getElementById('koji-tbody-completed');
+  const completedCountEl = document.getElementById('completed-count');
+  const completedSection = document.getElementById('completed-section');
+  
+  if (completed.length === 0) {
+    completedSection.style.display = 'none';
+  } else {
+    completedSection.style.display = 'block';
+    completedCountEl.textContent = `${completed.length}件`;
+    completedTbody.innerHTML = completed.map(k => buildKojiRow(k)).join('');
+  }
+}
+
+// 工事1行を作る共通関数
+function buildKojiRow(k) {
+  const hasMissing = DOC_TYPES.some(d => getDocStatus(k, d.key) === 'missing');
+  const statusClass = k.status === '受注' ? 's-uketu' : k.status === '施工中' ? 's-shiko' : 's-kanko';
+  
+  const dotsHtml = DOC_TYPES.map(d => {
+    const status = getDocStatus(k, d.key);
+    return `<span class="doc-dot ${status}" title="${d.label}: ${status === 'has' ? 'あり' : 'なし'}">${d.short}</span>`;
   }).join('');
+  
+  return `
+    <tr class="koji-row ${hasMissing && k.status !== '完工' ? 'alert' : ''}" onclick="openDetailModal('${k.id}')">
+      <td style="font-weight:${hasMissing && k.status !== '完工' ? '500' : '400'};">${escapeHtml(k.name)}</td>
+      <td class="hide-mobile"><span class="koji-num">${escapeHtml(k.number || '-')}</span></td>
+      <td><span class="s-pill ${statusClass}">${escapeHtml(k.status || '')}</span></td>
+      <td><div class="doc-dots">${dotsHtml}</div></td>
+      <td class="hide-mobile" style="color:var(--text-secondary);font-size:12px;">${escapeHtml(k.field || '-')}</td>
+    </tr>
+  `;
+}
+
+// 完成工事の展開・折りたたみ
+function toggleCompletedSection() {
+  const tableWrap = document.getElementById('completed-table-wrap');
+  const arrow = document.getElementById('completed-arrow');
+  if (tableWrap.style.display === 'none') {
+    tableWrap.style.display = 'block';
+    arrow.textContent = '▼';
+  } else {
+    tableWrap.style.display = 'none';
+    arrow.textContent = '▶';
+  }
 }
 
 // ============================================================
