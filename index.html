@@ -169,10 +169,48 @@
     transition: background 0.15s;
   }
   .btn-ghost:hover { background: var(--bg-secondary); }
-  #delete-koji-btn:hover {
-    background: var(--danger-bg);
-    border-color: var(--danger-fg);
+  
+  /* 編集ボタン（黄色） */
+  .btn-edit {
+    padding: 3px 12px;
+    font-size: 11px;
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    border: 1px solid #E5C7A0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
   }
+  .btn-edit:hover {
+    background: #F4DDB8;
+  }
+  /* 編集モード中（保存ボタンの状態）はprimaryカラーに */
+  .btn-edit.primary-action {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .btn-edit.primary-action:hover { background: var(--primary-dark); }
+  
+  /* 削除ボタン（赤） */
+  .btn-delete {
+    padding: 3px 12px;
+    font-size: 11px;
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+    border: 1px solid #E5B5B5;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-delete:hover {
+    background: #F5D0D0;
+  }
+  
   .btn-ghost.primary-action {
     background: var(--primary);
     color: white;
@@ -741,6 +779,7 @@
 <header class="topbar">
   <div>
     <h1>工事書類管理システム</h1>
+    <div class="subtitle">業務用OneDrive 連携版</div>
   </div>
   <div class="user-info" id="user-info"></div>
 </header>
@@ -839,8 +878,8 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <div class="card-label" style="margin-bottom:0;">工事情報</div>
             <div style="display:flex;gap:6px;">
-              <button class="btn-ghost" id="edit-koji-btn" onclick="toggleEditKoji()" style="padding:3px 10px;font-size:11px;">編集</button>
-              <button class="btn-ghost" id="delete-koji-btn" onclick="deleteKoji()" style="padding:3px 10px;font-size:11px;color:var(--danger-fg);">削除</button>
+              <button class="btn-edit" id="edit-koji-btn" onclick="toggleEditKoji()">編集</button>
+              <button class="btn-delete" id="delete-koji-btn" onclick="deleteKoji()">削除</button>
             </div>
           </div>
           <div class="info-grid" id="detail-info"></div>
