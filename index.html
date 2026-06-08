@@ -515,16 +515,24 @@
     width: 100%;
     padding: 8px 10px;
     font-size: 13px;
+    font-weight: 600;
     border-radius: 8px;
     border: 1px solid var(--border-strong);
     background: white;
-    color: var(--text-primary);
     font-family: inherit;
     cursor: pointer;
     transition: border-color 0.15s;
   }
   .status-select:hover {
     border-color: var(--text-secondary);
+  }
+  .status-select.status-uketu { color: var(--warning-fg); }
+  .status-select.status-shiko { color: #0C447C; }
+  .status-select.status-kanko { color: #085041; }
+  /* プルダウンの選択肢自体は通常色で表示 */
+  .status-select option {
+    color: var(--text-primary);
+    font-weight: 400;
   }
   
   /* === 確認ダイアログ === */
@@ -1710,14 +1718,40 @@ async function changeKojiStatus(kojiId, newStatus) {
   const oldStatus = koji.status;
   if (oldStatus === newStatus) return;
   
-  // 確認ダイアログ
-  const ok = await showConfirm({
-    title: 'ステータスの変更',
-    messageHtml: `「${escapeHtml(koji.name)}」のステータスを<br>${buildStatusText(oldStatus)} → ${buildStatusText(newStatus)} に変更します。<br>よろしいですか?`,
-    okText: '変更する',
-    cancelText: 'キャンセル'
-  });
-  if (!ok) {
+  let confirmed = false;
+  
+  // 受注 → 施工中 のとき、書類が揃ってるかチェック
+  if (oldStatus === '受注' && newStatus === '施工中') {
+    const missingDocs = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing');
+    if (missingDocs.length > 0) {
+      // 書類不足の警告ダイアログ
+      const missingList = missingDocs.map(d => `・${d.label}`).join('<br>');
+      confirmed = await showConfirm({
+        title: '書類が不足しています',
+        messageHtml: `以下の書類がまだアップロードされていません:<br><div style="margin-top:10px;text-align:left;display:inline-block;color:var(--danger-fg);font-weight:500;">${missingList}</div><br><br>このまま${buildStatusText('施工中')}に変更しますか?`,
+        okText: 'それでも変更する',
+        cancelText: 'キャンセル'
+      });
+    } else {
+      // 書類は揃ってるので、通常確認
+      confirmed = await showConfirm({
+        title: 'ステータスの変更',
+        messageHtml: `「${escapeHtml(koji.name)}」のステータスを<br>${buildStatusText(oldStatus)} → ${buildStatusText(newStatus)} に変更します。<br>よろしいですか?`,
+        okText: '変更する',
+        cancelText: 'キャンセル'
+      });
+    }
+  } else {
+    // 通常の確認ダイアログ
+    confirmed = await showConfirm({
+      title: 'ステータスの変更',
+      messageHtml: `「${escapeHtml(koji.name)}」のステータスを<br>${buildStatusText(oldStatus)} → ${buildStatusText(newStatus)} に変更します。<br>よろしいですか?`,
+      okText: '変更する',
+      cancelText: 'キャンセル'
+    });
+  }
+  
+  if (!confirmed) {
     // キャンセルされたらプルダウンを元に戻す
     const select = document.getElementById('status-change-select');
     if (select) select.value = oldStatus;
