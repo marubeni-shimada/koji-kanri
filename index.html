@@ -169,6 +169,15 @@
     transition: background 0.15s;
   }
   .btn-ghost:hover { background: var(--bg-secondary); }
+  .btn-ghost.primary-action {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .btn-ghost.primary-action:hover { background: var(--primary-dark); }
+  .edit-input {
+    width: 100%;
+  }
   
   /* === 統計カード === */
   .stats-grid {
@@ -716,7 +725,10 @@
     <div class="modal-body">
       <div class="info-cards">
         <div class="info-card">
-          <div class="card-label">工事情報</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="card-label" style="margin-bottom:0;">工事情報</div>
+            <button class="btn-ghost" id="edit-koji-btn" onclick="toggleEditKoji()" style="padding:3px 10px;font-size:11px;">編集</button>
+          </div>
           <div class="info-grid" id="detail-info"></div>
         </div>
         <div class="info-card">
@@ -1318,12 +1330,9 @@ function openDetailModal(id) {
     ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
   `;
   
-  document.getElementById('detail-info').innerHTML = `
-    <div class="label">発注者</div><div>${escapeHtml(koji.client || '-')}</div>
-    <div class="label">現場担当</div><div>${escapeHtml(koji.field || '-')}</div>
-    <div class="label">営業担当</div><div>${escapeHtml(koji.sales || '-')}</div>
-    <div class="label">登録日</div><div>${koji.createdAt ? new Date(koji.createdAt).toLocaleDateString('ja-JP') : '-'}</div>
-  `;
+  // 工事情報を表示（編集モードはリセット）
+  isEditingKoji = false;
+  renderKojiInfo(koji);
   
   // 進捗タイムライン
   const statusOrder = ['受注', '施工中', '完工'];
@@ -1386,7 +1395,7 @@ function renderDocList(koji) {
         </div>
         <div class="doc-actions">
           ${file ? `
-            <button class="icon-btn" onclick="openPdfPreview('${koji.id}', '${d.key}')" title="プレビュー">👁</button>
+            <button class="icon-btn" onclick="openPdfPreview('${koji.id}', '${d.key}')" title="プレビュー">🔍</button>
             <button class="icon-btn" onclick="downloadFile('${koji.id}', '${d.key}')" title="ダウンロード">↓</button>
             <button class="icon-btn primary" onclick="triggerUpload('${koji.id}', '${d.key}')" title="差し替え">↑</button>
             <button class="icon-btn danger" onclick="deleteDoc('${koji.id}', '${d.key}')" title="削除">🗑</button>
@@ -1403,6 +1412,134 @@ function renderDocList(koji) {
 function closeDetailModal() {
   document.getElementById('detail-modal').classList.remove('active');
   currentKojiId = null;
+  // 編集モードをリセット
+  isEditingKoji = false;
+}
+
+// ============================================================
+// 工事情報の編集
+// ============================================================
+let isEditingKoji = false;
+
+function renderKojiInfo(koji) {
+  if (isEditingKoji) {
+    // 編集モード
+    document.getElementById('detail-info').innerHTML = `
+      <div class="label">工事名</div><div><input type="text" class="form-input edit-input" id="edit-name" value="${escapeHtml(koji.name || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">工事番号</div><div><input type="text" class="form-input edit-input" id="edit-number" value="${escapeHtml(koji.number || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">発注者</div><div><input type="text" class="form-input edit-input" id="edit-client" value="${escapeHtml(koji.client || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">現場担当</div><div><input type="text" class="form-input edit-input" id="edit-field" value="${escapeHtml(koji.field || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">営業担当</div><div><input type="text" class="form-input edit-input" id="edit-sales" value="${escapeHtml(koji.sales || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">登録日</div><div style="font-size:12px;color:var(--text-secondary);">${koji.createdAt ? new Date(koji.createdAt).toLocaleDateString('ja-JP') : '-'}</div>
+    `;
+    document.getElementById('edit-koji-btn').textContent = '保存';
+    document.getElementById('edit-koji-btn').classList.add('primary-action');
+    // キャンセルボタンを追加
+    if (!document.getElementById('cancel-edit-btn')) {
+      const cancelBtn = document.createElement('button');
+      cancelBtn.id = 'cancel-edit-btn';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.style.cssText = 'padding:3px 10px;font-size:11px;margin-right:6px;';
+      cancelBtn.textContent = 'キャンセル';
+      cancelBtn.onclick = () => {
+        isEditingKoji = false;
+        renderKojiInfo(koji);
+        const cb = document.getElementById('cancel-edit-btn');
+        if (cb) cb.remove();
+      };
+      document.getElementById('edit-koji-btn').parentElement.insertBefore(cancelBtn, document.getElementById('edit-koji-btn'));
+    }
+  } else {
+    // 表示モード
+    document.getElementById('detail-info').innerHTML = `
+      <div class="label">発注者</div><div>${escapeHtml(koji.client || '-')}</div>
+      <div class="label">現場担当</div><div>${escapeHtml(koji.field || '-')}</div>
+      <div class="label">営業担当</div><div>${escapeHtml(koji.sales || '-')}</div>
+      <div class="label">登録日</div><div>${koji.createdAt ? new Date(koji.createdAt).toLocaleDateString('ja-JP') : '-'}</div>
+    `;
+    document.getElementById('edit-koji-btn').textContent = '編集';
+    document.getElementById('edit-koji-btn').classList.remove('primary-action');
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    if (cancelBtn) cancelBtn.remove();
+  }
+}
+
+async function toggleEditKoji() {
+  const koji = kojiList.find(k => k.id === currentKojiId);
+  if (!koji) return;
+  
+  if (!isEditingKoji) {
+    // 表示モード → 編集モード
+    isEditingKoji = true;
+    renderKojiInfo(koji);
+  } else {
+    // 編集モード → 保存
+    const newName = document.getElementById('edit-name').value.trim();
+    if (!newName) {
+      showToast('工事名は必須です', 'error');
+      return;
+    }
+    
+    const oldName = koji.name;
+    const newData = {
+      name: newName,
+      number: document.getElementById('edit-number').value.trim(),
+      client: document.getElementById('edit-client').value.trim(),
+      field: document.getElementById('edit-field').value.trim(),
+      sales: document.getElementById('edit-sales').value.trim()
+    };
+    
+    // 工事名が変更されたら、OneDriveのフォルダ名も変更が必要
+    const nameChanged = oldName !== newName;
+    
+    try {
+      showToast('保存中...');
+      
+      // 工事名が変更された場合、OneDriveのフォルダもリネーム
+      if (nameChanged && kojiFolderIds[koji.id]) {
+        try {
+          const newFolderName = sanitizeFolderName(newName);
+          await graphApi('PATCH', `/drives/${sharedDriveId}/items/${kojiFolderIds[koji.id]}`, {
+            name: newFolderName
+          });
+        } catch (err) {
+          console.warn('フォルダのリネームに失敗:', err);
+          // フォルダリネーム失敗してもデータは更新する
+        }
+      }
+      
+      // データ更新
+      Object.assign(koji, newData);
+      
+      // OneDriveの工事一覧JSON更新
+      await saveKojiList();
+      
+      // 表示モードに戻る
+      isEditingKoji = false;
+      
+      // 詳細画面のタイトルも更新
+      document.getElementById('detail-title').textContent = koji.name;
+      
+      // タグも更新
+      const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
+      const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
+      document.getElementById('detail-tags').innerHTML = `
+        <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
+        <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
+        ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
+      `;
+      
+      // 情報カードと一覧も再描画
+      renderKojiInfo(koji);
+      renderList();
+      renderStats();
+      
+      showToast('保存しました');
+    } catch (err) {
+      console.error('保存エラー:', err);
+      showToast('保存に失敗しました: ' + err.message, 'error');
+    }
+  }
 }
 
 // ============================================================
