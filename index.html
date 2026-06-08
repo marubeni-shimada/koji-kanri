@@ -458,6 +458,13 @@
     border-color: var(--primary);
   }
   .icon-btn.primary:hover { background: var(--primary-dark); }
+  .icon-btn.danger {
+    color: var(--danger-fg);
+  }
+  .icon-btn.danger:hover {
+    background: var(--danger-bg);
+    border-color: var(--danger-fg);
+  }
   .icon-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -1334,7 +1341,19 @@ function openDetailModal(id) {
       ${cls === 'current' ? '<strong>' + status + '</strong>' : status}
     </div>`;
   }).join('');
-  document.getElementById('detail-timeline').innerHTML = timeline;
+  
+  // ステータス変更プルダウンを追加
+  const statusSelector = `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+      <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">ステータス変更</label>
+      <select id="status-change-select" onchange="changeKojiStatus('${koji.id}', this.value)" style="width:100%;padding:6px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:6px;background:white;font-family:inherit;">
+        <option value="受注" ${koji.status === '受注' ? 'selected' : ''}>受注</option>
+        <option value="施工中" ${koji.status === '施工中' ? 'selected' : ''}>施工中</option>
+        <option value="完工" ${koji.status === '完工' ? 'selected' : ''}>完工</option>
+      </select>
+    </div>
+  `;
+  document.getElementById('detail-timeline').innerHTML = timeline + statusSelector;
   
   renderDocList(koji);
   
@@ -1370,6 +1389,7 @@ function renderDocList(koji) {
             <button class="icon-btn" onclick="openPdfPreview('${koji.id}', '${d.key}')" title="プレビュー">👁</button>
             <button class="icon-btn" onclick="downloadFile('${koji.id}', '${d.key}')" title="ダウンロード">↓</button>
             <button class="icon-btn primary" onclick="triggerUpload('${koji.id}', '${d.key}')" title="差し替え">↑</button>
+            <button class="icon-btn danger" onclick="deleteDoc('${koji.id}', '${d.key}')" title="削除">🗑</button>
           ` : `
             <button class="upload-btn-text" onclick="triggerUpload('${koji.id}', '${d.key}')">↑ アップロード</button>
           `}
@@ -1383,6 +1403,133 @@ function renderDocList(koji) {
 function closeDetailModal() {
   document.getElementById('detail-modal').classList.remove('active');
   currentKojiId = null;
+}
+
+// ============================================================
+// ステータス変更
+// ============================================================
+async function changeKojiStatus(kojiId, newStatus) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji) return;
+  
+  const oldStatus = koji.status;
+  if (oldStatus === newStatus) return;
+  
+  // 楽観的に更新
+  koji.status = newStatus;
+  
+  try {
+    showToast('ステータスを更新中...');
+    await saveKojiList();
+    
+    // 詳細モーダルのタグ表示も更新
+    const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
+    const statusClass = newStatus === '受注' ? 's-uketu' : newStatus === '施工中' ? 's-shiko' : 's-kanko';
+    document.getElementById('detail-tags').innerHTML = `
+      <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
+      <span class="s-pill ${statusClass}">${escapeHtml(newStatus)}</span>
+      ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
+    `;
+    
+    // タイムラインを再描画
+    redrawTimeline(koji);
+    
+    // 一覧と統計も更新
+    renderList();
+    renderStats();
+    
+    showToast(`ステータスを「${newStatus}」に変更しました`);
+  } catch (err) {
+    // 失敗時はロールバック
+    koji.status = oldStatus;
+    console.error('ステータス更新エラー:', err);
+    showToast('ステータスの更新に失敗しました', 'error');
+    // プルダウンも元に戻す
+    const select = document.getElementById('status-change-select');
+    if (select) select.value = oldStatus;
+  }
+}
+
+function redrawTimeline(koji) {
+  const statusOrder = ['受注', '施工中', '完工'];
+  const currentIdx = statusOrder.indexOf(koji.status);
+  const timeline = statusOrder.map((status, i) => {
+    let cls = 'future';
+    let icon = '○';
+    if (i < currentIdx || (i === currentIdx && koji.status === '完工')) {
+      cls = 'done'; icon = '✓';
+    } else if (i === currentIdx) {
+      cls = 'current'; icon = '●';
+    }
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.5;' : ''}">
+      <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;">${icon}</span>
+      ${cls === 'current' ? '<strong>' + status + '</strong>' : status}
+    </div>`;
+  }).join('');
+  
+  const statusSelector = `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+      <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">ステータス変更</label>
+      <select id="status-change-select" onchange="changeKojiStatus('${koji.id}', this.value)" style="width:100%;padding:6px 10px;font-size:12px;border:1px solid var(--border-strong);border-radius:6px;background:white;font-family:inherit;">
+        <option value="受注" ${koji.status === '受注' ? 'selected' : ''}>受注</option>
+        <option value="施工中" ${koji.status === '施工中' ? 'selected' : ''}>施工中</option>
+        <option value="完工" ${koji.status === '完工' ? 'selected' : ''}>完工</option>
+      </select>
+    </div>
+  `;
+  document.getElementById('detail-timeline').innerHTML = timeline + statusSelector;
+}
+
+// ============================================================
+// 書類削除
+// ============================================================
+async function deleteDoc(kojiId, docKey) {
+  const fileKey = `${kojiId}-${docKey}`;
+  const file = docFiles[fileKey];
+  if (!file) return;
+  
+  const docType = DOC_TYPES.find(d => d.key === docKey);
+  const docLabel = docType ? docType.label : '書類';
+  
+  // 確認ダイアログ
+  if (!confirm(`${docLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。よろしいですか?`)) {
+    return;
+  }
+  
+  try {
+    showToast('削除中...');
+    
+    // OneDriveから削除
+    await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
+    
+    // キャッシュから削除
+    delete docFiles[fileKey];
+    
+    // 再描画
+    const koji = kojiList.find(k => k.id === kojiId);
+    if (koji) {
+      renderDocList(koji);
+      const hasCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'has').length;
+      document.getElementById('doc-count').textContent = `${hasCount} / ${DOC_TYPES.length} 揃っています`;
+      
+      // タグも更新
+      const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
+      const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
+      document.getElementById('detail-tags').innerHTML = `
+        <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
+        <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
+        ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
+      `;
+    }
+    
+    renderList();
+    renderStats();
+    
+    showToast(`${docLabel}を削除しました`);
+  } catch (err) {
+    console.error('削除エラー:', err);
+    showToast('削除に失敗しました: ' + err.message, 'error');
+  }
 }
 
 // ============================================================
