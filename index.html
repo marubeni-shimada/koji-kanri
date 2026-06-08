@@ -169,6 +169,10 @@
     transition: background 0.15s;
   }
   .btn-ghost:hover { background: var(--bg-secondary); }
+  #delete-koji-btn:hover {
+    background: var(--danger-bg);
+    border-color: var(--danger-fg);
+  }
   .btn-ghost.primary-action {
     background: var(--primary);
     color: white;
@@ -835,7 +839,10 @@
         <div class="info-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <div class="card-label" style="margin-bottom:0;">工事情報</div>
-            <button class="btn-ghost" id="edit-koji-btn" onclick="toggleEditKoji()" style="padding:3px 10px;font-size:11px;">編集</button>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-ghost" id="edit-koji-btn" onclick="toggleEditKoji()" style="padding:3px 10px;font-size:11px;">編集</button>
+              <button class="btn-ghost" id="delete-koji-btn" onclick="deleteKoji()" style="padding:3px 10px;font-size:11px;color:var(--danger-fg);">削除</button>
+            </div>
           </div>
           <div class="info-grid" id="detail-info"></div>
         </div>
@@ -1600,6 +1607,9 @@ function renderKojiInfo(koji) {
     `;
     document.getElementById('edit-koji-btn').textContent = '保存';
     document.getElementById('edit-koji-btn').classList.add('primary-action');
+    // 編集中は削除ボタンを非表示
+    const delBtn = document.getElementById('delete-koji-btn');
+    if (delBtn) delBtn.style.display = 'none';
     // キャンセルボタンを追加
     if (!document.getElementById('cancel-edit-btn')) {
       const cancelBtn = document.createElement('button');
@@ -1625,6 +1635,9 @@ function renderKojiInfo(koji) {
     `;
     document.getElementById('edit-koji-btn').textContent = '編集';
     document.getElementById('edit-koji-btn').classList.remove('primary-action');
+    // 削除ボタンを再表示
+    const delBtn = document.getElementById('delete-koji-btn');
+    if (delBtn) delBtn.style.display = '';
     const cancelBtn = document.getElementById('cancel-edit-btn');
     if (cancelBtn) cancelBtn.remove();
   }
@@ -1821,6 +1834,70 @@ function redrawTimeline(koji) {
     </div>
   `;
   document.getElementById('detail-timeline').innerHTML = timeline + statusSelector;
+}
+
+// ============================================================
+// 工事の削除
+// ============================================================
+async function deleteKoji() {
+  const koji = kojiList.find(k => k.id === currentKojiId);
+  if (!koji) return;
+  
+  // 関連書類の数
+  const docCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'has').length;
+  
+  // 確認ダイアログ
+  const ok = await showConfirm({
+    title: '工事の削除',
+    messageHtml: `「${escapeHtml(koji.name)}」を削除します。<br><br>` +
+                 `<div style="text-align:left;display:inline-block;color:var(--danger-fg);font-weight:500;">` +
+                 `・工事情報がリストから削除されます<br>` +
+                 `・OneDriveの工事フォルダ${docCount > 0 ? `（書類${docCount}件含む）` : ''}も削除されます` +
+                 `</div><br><br>` +
+                 `この操作は取り消せません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  try {
+    showToast('削除中...');
+    
+    // OneDriveの工事フォルダを削除
+    const folderId = kojiFolderIds[koji.id];
+    if (folderId) {
+      try {
+        await graphApi('DELETE', `/drives/${sharedDriveId}/items/${folderId}`);
+      } catch (err) {
+        console.warn('フォルダ削除失敗:', err);
+        // フォルダ削除に失敗してもデータは消す（既に手動で消されてる可能性）
+      }
+    }
+    
+    // メモリ上のデータを削除
+    kojiList = kojiList.filter(k => k.id !== koji.id);
+    delete kojiFolderIds[koji.id];
+    // 関連する書類情報も削除
+    for (const docType of DOC_TYPES) {
+      delete docFiles[`${koji.id}-${docType.key}`];
+    }
+    
+    // OneDriveの工事一覧JSON更新
+    await saveKojiList();
+    
+    // 詳細モーダルを閉じる
+    closeDetailModal();
+    
+    // 一覧と統計を更新
+    renderList();
+    renderStats();
+    
+    showToast(`「${koji.name}」を削除しました`);
+  } catch (err) {
+    console.error('工事削除エラー:', err);
+    showToast('削除に失敗しました: ' + err.message, 'error');
+  }
 }
 
 // ============================================================
