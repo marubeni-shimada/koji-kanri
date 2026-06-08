@@ -510,6 +510,49 @@
   
   .upload-input { display: none; }
   
+  /* === 確認ダイアログ === */
+  .confirm-dialog {
+    background: var(--bg-card);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    padding: 28px 24px 20px;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+  .confirm-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    color: var(--warning-fg);
+  }
+  .confirm-icon.danger { color: var(--danger-fg); }
+  .confirm-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .confirm-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 22px;
+    white-space: pre-line;
+  }
+  .confirm-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .confirm-buttons button {
+    min-width: 100px;
+  }
+  .btn-primary.danger {
+    background: #A32D2D;
+  }
+  .btn-primary.danger:hover {
+    background: #7E1F1F;
+  }
+  
   /* === フォーム === */
   .form-group { margin-bottom: 14px; }
   .form-label {
@@ -869,6 +912,19 @@
 </div>
 
 <input type="file" id="upload-input" class="upload-input" accept="application/pdf">
+
+<!-- 確認ダイアログ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="confirm-dialog">
+    <div class="confirm-icon" id="confirm-icon">⚠</div>
+    <div class="confirm-title" id="confirm-title">確認</div>
+    <div class="confirm-message" id="confirm-message"></div>
+    <div class="confirm-buttons">
+      <button class="btn-ghost" id="confirm-cancel-btn">キャンセル</button>
+      <button class="btn-primary" id="confirm-ok-btn">OK</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1638,7 +1694,13 @@ async function changeKojiStatus(kojiId, newStatus) {
   if (oldStatus === newStatus) return;
   
   // 確認ダイアログ
-  if (!confirm(`「${koji.name}」のステータスを\n「${oldStatus}」→「${newStatus}」に変更します。\nよろしいですか?`)) {
+  const ok = await showConfirm({
+    title: 'ステータスの変更',
+    message: `「${koji.name}」のステータスを\n「${oldStatus}」→「${newStatus}」に変更します。\nよろしいですか?`,
+    okText: '変更する',
+    cancelText: 'キャンセル'
+  });
+  if (!ok) {
     // キャンセルされたらプルダウンを元に戻す
     const select = document.getElementById('status-change-select');
     if (select) select.value = oldStatus;
@@ -1722,7 +1784,14 @@ async function deleteDoc(kojiId, docKey) {
   const docLabel = docType ? docType.label : '書類';
   
   // 確認ダイアログ
-  if (!confirm(`${docLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。よろしいですか?`)) {
+  const ok = await showConfirm({
+    title: '書類の削除',
+    message: `${docLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。\nこの操作は取り消せません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) {
     return;
   }
   
@@ -2083,12 +2152,54 @@ function showToast(text, type = '') {
   }, 3000);
 }
 
+// 独自確認ダイアログ（Promiseベース）
+// options: { title, message, okText, cancelText, type ('warning' or 'danger') }
+function showConfirm(options) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirm-modal');
+    const titleEl = document.getElementById('confirm-title');
+    const messageEl = document.getElementById('confirm-message');
+    const iconEl = document.getElementById('confirm-icon');
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+    
+    titleEl.textContent = options.title || '確認';
+    messageEl.textContent = options.message || '';
+    okBtn.textContent = options.okText || 'OK';
+    cancelBtn.textContent = options.cancelText || 'キャンセル';
+    
+    // タイプによってアイコンと色を変える
+    if (options.type === 'danger') {
+      iconEl.textContent = '🗑';
+      iconEl.className = 'confirm-icon danger';
+      okBtn.className = 'btn-primary danger';
+    } else {
+      iconEl.textContent = '⚠';
+      iconEl.className = 'confirm-icon';
+      okBtn.className = 'btn-primary';
+    }
+    
+    modal.classList.add('active');
+    
+    const close = (result) => {
+      modal.classList.remove('active');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(result);
+    };
+    
+    okBtn.onclick = () => close(true);
+    cancelBtn.onclick = () => close(false);
+  });
+}
+
 // 検索
 document.getElementById('search-input').addEventListener('input', renderList);
 
 // モーダル外側クリックで閉じる
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   if (overlay.id === 'loading-overlay') return;
+  if (overlay.id === 'confirm-modal') return; // 確認ダイアログは外側クリック無効（明示的にボタンで操作）
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
       overlay.classList.remove('active');
@@ -2100,11 +2211,23 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   });
 });
 
+// 確認ダイアログは外側クリックで「キャンセル」扱い
+document.getElementById('confirm-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'confirm-modal') {
+    document.getElementById('confirm-cancel-btn').click();
+  }
+});
+
 // Escキーで閉じる
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay.active').forEach(m => {
       if (m.id === 'loading-overlay') return;
+      if (m.id === 'confirm-modal') {
+        // 確認ダイアログはキャンセル扱い
+        document.getElementById('confirm-cancel-btn').click();
+        return;
+      }
       m.classList.remove('active');
       if (m.id === 'pdf-modal') {
         pdfDoc = null;
