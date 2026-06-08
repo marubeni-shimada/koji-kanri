@@ -754,20 +754,20 @@
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-label">進行中</div>
-      <div class="stat-value" id="stat-active">-</div>
-    </div>
-    <div class="stat-card">
       <div class="stat-label">受注済</div>
       <div class="stat-value" id="stat-uketu">-</div>
     </div>
-    <div class="stat-card alert">
-      <div class="stat-label">書類不足</div>
-      <div class="stat-value" id="stat-missing">-</div>
+    <div class="stat-card">
+      <div class="stat-label">施工中</div>
+      <div class="stat-value" id="stat-active">-</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">完工</div>
       <div class="stat-value" id="stat-done">-</div>
+    </div>
+    <div class="stat-card alert">
+      <div class="stat-label">書類不足</div>
+      <div class="stat-value" id="stat-missing">-</div>
     </div>
   </div>
 
@@ -1513,7 +1513,7 @@ function openDetailModal(id) {
     }
     return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.45;' : ''}">
       <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;width:14px;">${icon}</span>
-      ${buildStatusText(status)}
+      <span style="${cls === 'current' ? 'font-weight:600;' : ''}">${escapeHtml(status)}</span>
     </div>`;
   }).join('');
   
@@ -1806,7 +1806,7 @@ function redrawTimeline(koji) {
     }
     return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.45;' : ''}">
       <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;width:14px;">${icon}</span>
-      ${buildStatusText(status)}
+      <span style="${cls === 'current' ? 'font-weight:600;' : ''}">${escapeHtml(status)}</span>
     </div>`;
   }).join('');
   
