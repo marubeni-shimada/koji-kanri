@@ -1637,6 +1637,14 @@ async function changeKojiStatus(kojiId, newStatus) {
   const oldStatus = koji.status;
   if (oldStatus === newStatus) return;
   
+  // 確認ダイアログ
+  if (!confirm(`「${koji.name}」のステータスを\n「${oldStatus}」→「${newStatus}」に変更します。\nよろしいですか?`)) {
+    // キャンセルされたらプルダウンを元に戻す
+    const select = document.getElementById('status-change-select');
+    if (select) select.value = oldStatus;
+    return;
+  }
+  
   // 楽観的に更新
   koji.status = newStatus;
   
