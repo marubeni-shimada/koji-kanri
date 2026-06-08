@@ -1514,9 +1514,9 @@ function openDetailModal(id) {
     } else if (i === currentIdx) {
       cls = 'current'; icon = '●';
     }
-    return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.5;' : ''}">
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.45;' : ''}">
       <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;width:14px;">${icon}</span>
-      ${buildStatusPill(status)}
+      ${buildStatusText(status)}
     </div>`;
   }).join('');
   
@@ -1724,7 +1724,7 @@ async function changeKojiStatus(kojiId, newStatus) {
   // 確認ダイアログ
   const ok = await showConfirm({
     title: 'ステータスの変更',
-    messageHtml: `「${escapeHtml(koji.name)}」のステータスを変更します<div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;">${buildStatusPill(oldStatus)}<span style="color:var(--text-tertiary);">→</span>${buildStatusPill(newStatus)}</div>`,
+    messageHtml: `「${escapeHtml(koji.name)}」のステータスを<br>${buildStatusText(oldStatus)} → ${buildStatusText(newStatus)} に変更します。<br>よろしいですか?`,
     okText: '変更する',
     cancelText: 'キャンセル'
   });
@@ -1781,9 +1781,9 @@ function redrawTimeline(koji) {
     } else if (i === currentIdx) {
       cls = 'current'; icon = '●';
     }
-    return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.5;' : ''}">
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;${cls === 'future' ? 'opacity:0.45;' : ''}">
       <span style="color:${cls === 'done' ? '#1D9E75' : cls === 'current' ? '#BA7517' : 'inherit'};font-weight:bold;width:14px;">${icon}</span>
-      ${buildStatusPill(status)}
+      ${buildStatusText(status)}
     </div>`;
   }).join('');
   
@@ -2180,10 +2180,18 @@ function showToast(text, type = '') {
   }, 3000);
 }
 
-// ステータス用の色付きピルHTML
+// ステータス用の色付きピルHTML（一覧やタグ用）
 function buildStatusPill(status) {
   const cls = status === '受注' ? 's-uketu' : status === '施工中' ? 's-shiko' : 's-kanko';
   return `<span class="s-pill ${cls}">${escapeHtml(status)}</span>`;
+}
+
+// ステータス用の色付きテキスト（タイムラインやダイアログ用、背景色なし）
+function buildStatusText(status) {
+  const color = status === '受注' ? 'var(--warning-fg)' : 
+                status === '施工中' ? '#0C447C' : 
+                '#085041';
+  return `<span style="color:${color};font-weight:600;">${escapeHtml(status)}</span>`;
 }
 
 // 独自確認ダイアログ（Promiseベース）
