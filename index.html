@@ -644,6 +644,180 @@
   
   .upload-input { display: none; }
   
+  /* === 工事種別ピル === */
+  .type-pill {
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .type-pill.type-public {
+    background: #E6F1FB;
+    color: #0C447C;
+  }
+  .type-pill.type-minkan {
+    background: #FAEEDA;
+    color: #854F0B;
+  }
+  
+  /* === 会社カード === */
+  .company-section-divider {
+    margin: 20px 0 10px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .company-section-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+  .company-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: white;
+    overflow: hidden;
+  }
+  .company-card.complete {
+    border-color: #B5DDCB;
+    background: #FCFEFD;
+  }
+  .company-card.incomplete {
+    border-color: #E5C7A0;
+    background: #FFFEFB;
+  }
+  .company-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .company-card.complete .company-header { background: #E8F5EE; }
+  .company-card.incomplete .company-header { background: #FAF1DF; }
+  .company-icon { font-size: 14px; }
+  .company-name {
+    font-weight: 500;
+    flex: 1;
+  }
+  .company-status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .company-status.done {
+    background: #D7F0E4;
+    color: #0E5C3D;
+  }
+  .company-status.pending {
+    background: #FAEEDA;
+    color: #854F0B;
+  }
+  .company-delete-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+  .company-delete-btn:hover {
+    opacity: 1;
+    background: rgba(163, 45, 45, 0.1);
+  }
+  .company-body {
+    padding: 8px 12px;
+  }
+  .change-section {
+    margin: 8px 0 8px 24px;
+    padding: 8px 10px;
+    background: #FAFAF7;
+    border-left: 3px solid var(--border-strong);
+    border-radius: 4px;
+  }
+  .change-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .change-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .change-status {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 999px;
+  }
+  .change-status.done {
+    background: #D7F0E4;
+    color: #0E5C3D;
+  }
+  .change-status.pending {
+    background: #F8E5DD;
+    color: #791F1F;
+  }
+  .add-change-btn {
+    margin-top: 6px;
+    margin-left: 24px;
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .add-change-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+  .add-company-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .add-company-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    border-style: solid;
+  }
+  
+  /* 一覧テーブルの会社サマリ */
+  .company-summary {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .company-summary.company-summary-done {
+    background: #E1F5EE;
+    color: #085041;
+  }
+  .company-summary.company-summary-pending {
+    background: #FAEEDA;
+    color: #854F0B;
+  }
+  
   /* === ステータス変更プルダウン === */
   .status-select {
     width: 100%;
@@ -714,6 +888,24 @@
   
   /* === フォーム === */
   .form-group { margin-bottom: 14px; }
+  .type-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    background: white;
+    transition: all 0.15s;
+  }
+  .type-radio:has(input:checked) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .type-radio input { cursor: pointer; }
   .form-label {
     font-size: 12px;
     color: var(--text-secondary);
@@ -940,6 +1132,7 @@
       <tr>
         <th>工事名</th>
         <th class="hide-mobile">工事番号</th>
+        <th>種別</th>
         <th>ステータス</th>
         <th>書類</th>
         <th class="hide-mobile">担当</th>
@@ -952,7 +1145,7 @@
     <span>凡例:</span>
     <span><span class="doc-dot has">●</span> あり</span>
     <span><span class="doc-dot missing">●</span> なし</span>
-    <span style="margin-left: auto; opacity: 0.7;">契=契約書/注文書 / 請=注文請書 / 予=実行予算 / 登=工事登録用紙</span>
+    <span style="margin-left: auto; opacity: 0.7;">公共:契/予/登 民間:注/請/予/登 + 🏢会社数</span>
   </div>
 
   <!-- 完成工事セクション（折りたたみ） -->
@@ -968,6 +1161,7 @@
           <tr>
             <th>工事名</th>
             <th class="hide-mobile">工事番号</th>
+            <th>種別</th>
             <th>ステータス</th>
             <th>書類</th>
             <th class="hide-mobile">担当</th>
@@ -1037,6 +1231,21 @@
       <div class="form-group">
         <label class="form-label">工事名<span class="required-mark">必須</span></label>
         <input type="text" class="form-input" id="new-name" placeholder="例：○○橋梁補修工事">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">工事種別<span class="required-mark">必須</span></label>
+        <div style="display:flex;gap:12px;">
+          <label class="type-radio">
+            <input type="radio" name="new-type" value="公共" checked>
+            <span>公共</span>
+          </label>
+          <label class="type-radio">
+            <input type="radio" name="new-type" value="民間">
+            <span>民間</span>
+          </label>
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">※種別によって必要な書類が変わります</div>
       </div>
 
       <div class="form-grid-2">
@@ -1113,6 +1322,19 @@
   </div>
 </div>
 
+<!-- 入力プロンプトダイアログ -->
+<div class="modal-overlay" id="prompt-modal">
+  <div class="confirm-dialog" style="text-align:left;">
+    <div class="confirm-title" id="prompt-title" style="text-align:center;">入力</div>
+    <div id="prompt-label" style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;"></div>
+    <input type="text" id="prompt-input" class="form-input" style="width:100%;margin-bottom:18px;">
+    <div class="confirm-buttons">
+      <button class="btn-ghost" id="prompt-cancel-btn">キャンセル</button>
+      <button class="btn-primary" id="prompt-ok-btn">追加する</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1154,26 +1376,67 @@ if (window.pdfjsLib) {
 // ============================================================
 // グローバル状態
 // ============================================================
-const DOC_TYPES = [
-  { key: 'keiyaku_chumon', label: '契約書/注文書', short: '契', filePrefix: '契約書注文書' },
-  { key: 'uke',            label: '注文請書',     short: '請', filePrefix: '注文請書' },
-  { key: 'yosan',          label: '実行予算',     short: '予', filePrefix: '実行予算' },
-  { key: 'toroku',         label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
+// 種別ごとの共通書類
+const DOC_TYPES_PUBLIC = [
+  { key: 'keiyaku',  label: '契約書',       short: '契', filePrefix: '契約書' },
+  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
+  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
 ];
 
-// ファイル名から書類タイプを判定（DOC_TYPESに対するマッチング）
-function matchDocType(fileName) {
-  // 契約書/注文書は「契約書」「注文書」「契約書注文書」のいずれでもOK
-  if (fileName.startsWith('契約書注文書') || 
-      fileName.startsWith('契約書') || 
-      fileName.startsWith('注文書')) {
-    return DOC_TYPES.find(d => d.key === 'keiyaku_chumon');
-  }
-  // 他は通常通り
-  for (const docType of DOC_TYPES) {
-    if (docType.key === 'keiyaku_chumon') continue;
-    if (fileName.startsWith(docType.filePrefix)) {
+const DOC_TYPES_MINKAN = [
+  { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書' },
+  { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書' },
+  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
+  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
+];
+
+// 会社ごとの書類タイプ（公共・民間共通）
+const COMPANY_DOC_TYPES = [
+  { key: 'chumon',   label: '注文書',  filePrefix: '注文書' },
+  { key: 'uke',      label: '請書',    filePrefix: '請書' }
+];
+
+// 工事種別に応じた共通書類タイプを返す
+function getDocTypes(koji) {
+  if (!koji) return DOC_TYPES_PUBLIC;
+  return koji.type === '民間' ? DOC_TYPES_MINKAN : DOC_TYPES_PUBLIC;
+}
+
+// 互換性のため：旧コードが参照する DOC_TYPES（デフォルトは公共向け）
+const DOC_TYPES = DOC_TYPES_PUBLIC;
+
+// ファイル名から書類タイプを判定（共通書類のみ、会社書類は別関数）
+function matchCommonDocType(fileName, kojiType) {
+  const types = kojiType === '民間' ? DOC_TYPES_MINKAN : DOC_TYPES_PUBLIC;
+  for (const docType of types) {
+    if (fileName.startsWith(docType.filePrefix + '_')) {
       return docType;
+    }
+  }
+  return null;
+}
+
+// ファイル名から会社書類情報を抽出
+// 例：「△△建設株式会社_注文書_工事名_20260608.pdf」
+//   →{ companyName: '△△建設株式会社', docKey: 'chumon', changeNum: 0 }
+// 例：「△△建設株式会社_注文書_変更1_工事名_20260710.pdf」
+//   →{ companyName: '△△建設株式会社', docKey: 'chumon', changeNum: 1 }
+function parseCompanyDocFileName(fileName, companies) {
+  if (!companies || companies.length === 0) return null;
+  for (const company of companies) {
+    const prefix = company.name + '_';
+    if (!fileName.startsWith(prefix)) continue;
+    const rest = fileName.substring(prefix.length);
+    // 注文書/請書 をチェック
+    for (const docType of COMPANY_DOC_TYPES) {
+      const docPrefix = docType.filePrefix + '_';
+      if (rest.startsWith(docPrefix)) {
+        const afterDoc = rest.substring(docPrefix.length);
+        // 変更N_ で始まるかチェック
+        const changeMatch = afterDoc.match(/^変更(\d+)_/);
+        const changeNum = changeMatch ? parseInt(changeMatch[1]) : 0;
+        return { companyName: company.name, docKey: docType.key, changeNum };
+      }
     }
   }
   return null;
@@ -1313,9 +1576,22 @@ async function loadAllDataFast() {
           // フォルダの中身（$expand=children で同時取得済み）
           if (folder.children) {
             for (const file of folder.children) {
-              const docType = matchDocType(file.name);
+              // まず会社書類として判定（会社名が先頭にあるパターン）
+              const companyDoc = parseCompanyDocFileName(file.name, koji.companies);
+              if (companyDoc) {
+                const fileKey = `${koji.id}-company-${companyDoc.companyName}-${companyDoc.docKey}-${companyDoc.changeNum}`;
+                docFiles[fileKey] = {
+                  fileId: file.id,
+                  fileName: file.name,
+                  size: file.size,
+                  modified: file.lastModifiedDateTime
+                };
+                continue;
+              }
+              // 共通書類として判定
+              const docType = matchCommonDocType(file.name, koji.type);
               if (docType) {
-                const fileKey = `${koji.id}-${docType.key}`;
+                const fileKey = `${koji.id}-common-${docType.key}`;
                 docFiles[fileKey] = {
                   fileId: file.id,
                   fileName: file.name,
@@ -1458,21 +1734,25 @@ async function loadKojiList() {
       {
         id: 'koji_' + Date.now() + '_1',
         name: '○○橋梁補修工事',
+        type: '公共',
         number: 'K-2026-014',
         status: '完工',
         client: '国土交通省',
         sales: '山田 太郎',
         field: '田中 次郎',
+        companies: [],
         createdAt: new Date().toISOString()
       },
       {
         id: 'koji_' + Date.now() + '_2',
         name: '△△道路改良工事',
+        type: '民間',
         number: 'K-2026-013',
         status: '施工中',
         client: '○○建設株式会社',
         sales: '池田 玲',
         field: '佐藤 健一',
+        companies: [],
         createdAt: new Date().toISOString()
       }
     ];
@@ -1532,9 +1812,22 @@ async function loadKojiDocStatus(koji) {
     const result = await graphApi('GET', `/drives/${sharedDriveId}/items/${folderId}/children`);
     
     for (const file of result.value) {
-      const docType = matchDocType(file.name);
+      // まず会社書類として判定
+      const companyDoc = parseCompanyDocFileName(file.name, koji.companies);
+      if (companyDoc) {
+        const fileKey = `${koji.id}-company-${companyDoc.companyName}-${companyDoc.docKey}-${companyDoc.changeNum}`;
+        docFiles[fileKey] = {
+          fileId: file.id,
+          fileName: file.name,
+          size: file.size,
+          modified: file.lastModifiedDateTime
+        };
+        continue;
+      }
+      // 共通書類として判定
+      const docType = matchCommonDocType(file.name, koji.type);
       if (docType) {
-        const fileKey = `${koji.id}-${docType.key}`;
+        const fileKey = `${koji.id}-common-${docType.key}`;
         docFiles[fileKey] = {
           fileId: file.id,
           fileName: file.name,
@@ -1551,18 +1844,70 @@ async function loadKojiDocStatus(koji) {
 // ============================================================
 // 表示
 // ============================================================
+// 共通書類の状況を取得
 function getDocStatus(koji, docKey) {
-  const fileKey = `${koji.id}-${docKey}`;
+  const fileKey = `${koji.id}-common-${docKey}`;
   return docFiles[fileKey] ? 'has' : 'missing';
+}
+
+// 会社書類の状況を取得
+function getCompanyDocStatus(koji, companyName, docKey, changeNum = 0) {
+  const fileKey = `${koji.id}-company-${companyName}-${docKey}-${changeNum}`;
+  return docFiles[fileKey] ? 'has' : 'missing';
+}
+
+// 会社1社が「揃ってる」か判定（メインの注文書・請書）
+function isCompanyDocsComplete(koji, companyName) {
+  return getCompanyDocStatus(koji, companyName, 'chumon', 0) === 'has' &&
+         getCompanyDocStatus(koji, companyName, 'uke', 0) === 'has';
+}
+
+// 会社の変更分N回目が揃ってるか
+function isCompanyChangeComplete(koji, companyName, changeNum) {
+  return getCompanyDocStatus(koji, companyName, 'chumon', changeNum) === 'has' &&
+         getCompanyDocStatus(koji, companyName, 'uke', changeNum) === 'has';
+}
+
+// 工事全体で不足してる書類数を数える
+function countMissingDocs(koji) {
+  let missing = 0;
+  // 共通書類
+  for (const dt of getDocTypes(koji)) {
+    if (getDocStatus(koji, dt.key) === 'missing') missing++;
+  }
+  // 会社書類（メインの注文書・請書）
+  if (koji.companies) {
+    for (const company of koji.companies) {
+      if (!isCompanyDocsComplete(koji, company.name)) missing++;
+    }
+  }
+  return missing;
+}
+
+// 工事全体で書類が全部揃ってるか判定
+function isAllDocsComplete(koji) {
+  return countMissingDocs(koji) === 0;
+}
+
+// 工事全体の書類完了率を計算（共通書類+会社書類）
+function calcCompletionRate(koji) {
+  let total = getDocTypes(koji).length;
+  let done = getDocTypes(koji).filter(dt => getDocStatus(koji, dt.key) === 'has').length;
+  if (koji.companies) {
+    for (const company of koji.companies) {
+      total += 2; // 注文書・請書
+      if (getCompanyDocStatus(koji, company.name, 'chumon', 0) === 'has') done++;
+      if (getCompanyDocStatus(koji, company.name, 'uke', 0) === 'has') done++;
+    }
+  }
+  return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 100 };
 }
 
 function renderStats() {
   const active = kojiList.filter(k => k.status === '施工中').length;
   const uketu = kojiList.filter(k => k.status === '受注').length;
   const done = kojiList.filter(k => k.status === '完工').length;
-  const missing = kojiList.filter(k => 
-    DOC_TYPES.some(d => getDocStatus(k, d.key) === 'missing')
-  ).length;
+  const missing = kojiList.filter(k => k.status !== '完工' && countMissingDocs(k) > 0).length;
   
   document.getElementById('stat-active').textContent = active;
   document.getElementById('stat-uketu').textContent = uketu;
@@ -1583,24 +1928,24 @@ function renderAlerts() {
   for (const koji of kojiList) {
     if (koji.status === '完工') continue; // 完工は対象外
     
-    const missingDocs = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing');
+    const missingCount = countMissingDocs(koji);
     
     // 優先度1：施工中で書類不足
-    if (koji.status === '施工中' && missingDocs.length > 0) {
+    if (koji.status === '施工中' && missingCount > 0) {
       alerts.push({
         koji,
         priority: 1,
-        reason: `書類${missingDocs.length}件不足`
+        reason: `書類${missingCount}件不足`
       });
       continue;
     }
     
     // 優先度2：受注で書類不足
-    if (koji.status === '受注' && missingDocs.length > 0) {
+    if (koji.status === '受注' && missingCount > 0) {
       alerts.push({
         koji,
         priority: 2,
-        reason: `書類${missingDocs.length}件不足`
+        reason: `書類${missingCount}件不足`
       });
       continue;
     }
@@ -1666,27 +2011,69 @@ function renderCompletionBars() {
     return;
   }
   
-  const html = DOC_TYPES.map(d => {
-    const has = activeKoji.filter(k => getDocStatus(k, d.key) === 'has').length;
-    const total = activeKoji.length;
-    const pct = total > 0 ? Math.round((has / total) * 100) : 0;
-    
+  // 全書類種別（公共・民間どちらでも出てくるもの全部）
+  // 工事ごとに該当する書類のみ計算
+  const allDocLabels = ['契約書', '注文書', '請書', '実行予算', '工事登録用紙'];
+  const stats = {};
+  for (const label of allDocLabels) {
+    stats[label] = { has: 0, total: 0 };
+  }
+  // 会社書類サマリも追加
+  const companyStat = { complete: 0, total: 0 };
+  
+  for (const koji of activeKoji) {
+    for (const dt of getDocTypes(koji)) {
+      const label = dt.label;
+      if (!stats[label]) stats[label] = { has: 0, total: 0 };
+      stats[label].total++;
+      if (getDocStatus(koji, dt.key) === 'has') stats[label].has++;
+    }
+    // 会社書類
+    if (koji.companies) {
+      for (const c of koji.companies) {
+        companyStat.total++;
+        if (isCompanyDocsComplete(koji, c.name)) companyStat.complete++;
+      }
+    }
+  }
+  
+  // 該当工事が0件のラベルは表示しない
+  const html = allDocLabels.filter(l => stats[l].total > 0).map(label => {
+    const s = stats[label];
+    const pct = s.total > 0 ? Math.round((s.has / s.total) * 100) : 0;
     let barClass = '';
     if (pct === 100) barClass = 'full';
     else if (pct < 50) barClass = 'low';
-    
     return `
       <div class="progress-row">
-        <div class="progress-label">${escapeHtml(d.label)}</div>
+        <div class="progress-label">${escapeHtml(label)}</div>
         <div class="progress-bar-wrap">
           <div class="progress-bar ${barClass}" style="width:${pct}%;"></div>
         </div>
-        <div class="progress-text">${pct}% (${has}/${total})</div>
+        <div class="progress-text">${pct}% (${s.has}/${s.total})</div>
       </div>
     `;
   }).join('');
   
-  barsEl.innerHTML = html;
+  // 会社書類の集計
+  let companyHtml = '';
+  if (companyStat.total > 0) {
+    const pct = Math.round((companyStat.complete / companyStat.total) * 100);
+    let barClass = '';
+    if (pct === 100) barClass = 'full';
+    else if (pct < 50) barClass = 'low';
+    companyHtml = `
+      <div class="progress-row" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
+        <div class="progress-label">🏢 会社書類</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar ${barClass}" style="width:${pct}%;"></div>
+        </div>
+        <div class="progress-text">${pct}% (${companyStat.complete}/${companyStat.total})</div>
+      </div>
+    `;
+  }
+  
+  barsEl.innerHTML = html + companyHtml;
 }
 
 function renderList() {
@@ -1727,20 +2114,39 @@ function renderList() {
 
 // 工事1行を作る共通関数
 function buildKojiRow(k) {
-  const hasMissing = DOC_TYPES.some(d => getDocStatus(k, d.key) === 'missing');
+  const missingCount = countMissingDocs(k);
+  const hasMissing = missingCount > 0;
   const statusClass = k.status === '受注' ? 's-uketu' : k.status === '施工中' ? 's-shiko' : 's-kanko';
+  const typeClass = k.type === '民間' ? 'type-minkan' : 'type-public';
   
-  const dotsHtml = DOC_TYPES.map(d => {
+  // 共通書類のドット
+  const dotsHtml = getDocTypes(k).map(d => {
     const status = getDocStatus(k, d.key);
     return `<span class="doc-dot ${status}" title="${d.label}: ${status === 'has' ? 'あり' : 'なし'}">${d.short}</span>`;
   }).join('');
+  
+  // 会社サマリ
+  let companySummary = '';
+  if (k.companies && k.companies.length > 0) {
+    const completeCount = k.companies.filter(c => isCompanyDocsComplete(k, c.name)).length;
+    const total = k.companies.length;
+    const allComplete = completeCount === total;
+    const cls = allComplete ? 'company-summary-done' : 'company-summary-pending';
+    companySummary = `
+      <span style="margin: 0 4px; color: var(--border-strong);">|</span>
+      <span class="company-summary ${cls}" title="会社書類: ${completeCount}/${total} 揃ってる">🏢 ${completeCount}/${total}</span>
+    `;
+  } else {
+    companySummary = '<span style="font-size:10px;color:var(--text-tertiary);margin-left:4px;">（会社なし）</span>';
+  }
   
   return `
     <tr class="koji-row ${hasMissing && k.status !== '完工' ? 'alert' : ''}" onclick="openDetailModal('${k.id}')">
       <td style="font-weight:${hasMissing && k.status !== '完工' ? '500' : '400'};">${escapeHtml(k.name)}</td>
       <td class="hide-mobile"><span class="koji-num">${escapeHtml(k.number || '-')}</span></td>
+      <td><span class="type-pill ${typeClass}">${escapeHtml(k.type || '公共')}</span></td>
       <td><span class="s-pill ${statusClass}">${escapeHtml(k.status || '')}</span></td>
-      <td><div class="doc-dots">${dotsHtml}</div></td>
+      <td><div class="doc-dots">${dotsHtml}${companySummary}</div></td>
       <td class="hide-mobile" style="color:var(--text-secondary);font-size:12px;">${escapeHtml(k.field || '-')}</td>
     </tr>
   `;
@@ -1769,10 +2175,12 @@ function openDetailModal(id) {
   
   document.getElementById('detail-title').textContent = koji.name;
   
-  const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
+  const missingCount = countMissingDocs(koji);
   const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
+  const typeClass = koji.type === '民間' ? 'type-minkan' : 'type-public';
   document.getElementById('detail-tags').innerHTML = `
     <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
+    <span class="type-pill ${typeClass}">${escapeHtml(koji.type || '公共')}</span>
     <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
     ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
   `;
@@ -1813,47 +2221,161 @@ function openDetailModal(id) {
   
   renderDocList(koji);
   
-  const hasCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'has').length;
-  document.getElementById('doc-count').textContent = `${hasCount} / ${DOC_TYPES.length} 揃っています`;
+  const rate = calcCompletionRate(koji);
+  document.getElementById('doc-count').textContent = `${rate.done} / ${rate.total} 揃っています`;
   
   document.getElementById('detail-modal').classList.add('active');
 }
 
 function renderDocList(koji) {
-  const html = DOC_TYPES.map(d => {
-    const fileKey = `${koji.id}-${d.key}`;
-    const file = docFiles[fileKey];
-    const status = file ? 'has' : 'missing';
-    const icon = file ? '✓' : '!';
-    
-    let subText = '未アップロード';
-    if (file) {
-      const sizeText = formatFileSize(file.size);
-      const dateText = file.modified ? new Date(file.modified).toLocaleDateString('ja-JP') : '';
-      subText = `${file.fileName} · ${sizeText}${dateText ? ' · ' + dateText : ''}`;
-    }
-    
-    return `
-      <div class="doc-row ${status}">
-        <div class="doc-icon">${icon}</div>
-        <div class="doc-info">
-          <div class="doc-name">${d.label}</div>
-          <div class="doc-sub">${escapeHtml(subText)}</div>
+  const docTypes = getDocTypes(koji);
+  
+  // 共通書類のHTML
+  const commonHtml = docTypes.map(d => {
+    return buildCommonDocRow(koji, d);
+  }).join('');
+  
+  // 会社書類セクション
+  let companyHtml = '';
+  if (koji.companies && koji.companies.length > 0) {
+    companyHtml = koji.companies.map(c => buildCompanyCard(koji, c)).join('');
+  }
+  
+  // 「会社を追加」ボタン
+  const addCompanyBtn = `
+    <button class="add-company-btn" onclick="openAddCompanyDialog('${koji.id}')">
+      ＋ 会社を追加
+    </button>
+  `;
+  
+  document.getElementById('doc-list').innerHTML = `
+    ${commonHtml}
+    <div class="company-section-divider">
+      <div class="company-section-title">━━ 会社ごとの注文書・請書 ━━</div>
+    </div>
+    ${companyHtml}
+    ${addCompanyBtn}
+  `;
+}
+
+// 共通書類1行
+function buildCommonDocRow(koji, d) {
+  const fileKey = `${koji.id}-common-${d.key}`;
+  const file = docFiles[fileKey];
+  const status = file ? 'has' : 'missing';
+  const icon = file ? '✓' : '!';
+  
+  let subText = '未アップロード';
+  if (file) {
+    const sizeText = formatFileSize(file.size);
+    const dateText = file.modified ? new Date(file.modified).toLocaleDateString('ja-JP') : '';
+    subText = `${file.fileName} · ${sizeText}${dateText ? ' · ' + dateText : ''}`;
+  }
+  
+  return `
+    <div class="doc-row ${status}">
+      <div class="doc-icon">${icon}</div>
+      <div class="doc-info">
+        <div class="doc-name">${d.label}</div>
+        <div class="doc-sub">${escapeHtml(subText)}</div>
+      </div>
+      <div class="doc-actions">
+        ${file ? `
+          <button class="icon-btn" onclick="openPdfPreviewCommon('${koji.id}', '${d.key}')" title="プレビュー">🔍</button>
+          <button class="icon-btn" onclick="downloadFileCommon('${koji.id}', '${d.key}')" title="ダウンロード">↓</button>
+          <button class="icon-btn primary" onclick="triggerUploadCommon('${koji.id}', '${d.key}')" title="差し替え">↑</button>
+          <button class="icon-btn danger" onclick="deleteCommonDoc('${koji.id}', '${d.key}')" title="削除">🗑</button>
+        ` : `
+          <button class="upload-btn-text" onclick="triggerUploadCommon('${koji.id}', '${d.key}')">↑ アップロード</button>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+// 会社1社のカード
+function buildCompanyCard(koji, company) {
+  const complete = isCompanyDocsComplete(koji, company.name);
+  const changes = company.changes || 0;
+  
+  // メインの注文書・請書
+  const mainRows = COMPANY_DOC_TYPES.map(dt => {
+    return buildCompanyDocRow(koji, company.name, dt, 0);
+  }).join('');
+  
+  // 変更分のリスト
+  let changeRows = '';
+  for (let i = 1; i <= changes; i++) {
+    const changeComplete = isCompanyChangeComplete(koji, company.name, i);
+    changeRows += `
+      <div class="change-section">
+        <div class="change-header">
+          <span class="change-label">変更 ${i}</span>
+          ${changeComplete ? '<span class="change-status done">✓ 揃っています</span>' : '<span class="change-status pending">不足あり</span>'}
         </div>
-        <div class="doc-actions">
-          ${file ? `
-            <button class="icon-btn" onclick="openPdfPreview('${koji.id}', '${d.key}')" title="プレビュー">🔍</button>
-            <button class="icon-btn" onclick="downloadFile('${koji.id}', '${d.key}')" title="ダウンロード">↓</button>
-            <button class="icon-btn primary" onclick="triggerUpload('${koji.id}', '${d.key}')" title="差し替え">↑</button>
-            <button class="icon-btn danger" onclick="deleteDoc('${koji.id}', '${d.key}')" title="削除">🗑</button>
-          ` : `
-            <button class="upload-btn-text" onclick="triggerUpload('${koji.id}', '${d.key}')">↑ アップロード</button>
-          `}
-        </div>
+        ${COMPANY_DOC_TYPES.map(dt => buildCompanyDocRow(koji, company.name, dt, i)).join('')}
       </div>
     `;
-  }).join('');
-  document.getElementById('doc-list').innerHTML = html;
+  }
+  
+  return `
+    <div class="company-card ${complete ? 'complete' : 'incomplete'}">
+      <div class="company-header">
+        <span class="company-icon">🏢</span>
+        <span class="company-name">${escapeHtml(company.name)}</span>
+        ${complete ? '<span class="company-status done">✓ 揃っています</span>' : '<span class="company-status pending">⚠ 不足あり</span>'}
+        <button class="company-delete-btn" onclick="deleteCompany('${koji.id}', ${escapeAttr(company.name)})" title="会社を削除">🗑</button>
+      </div>
+      <div class="company-body">
+        ${mainRows}
+        ${changeRows}
+        <button class="add-change-btn" onclick="addCompanyChange('${koji.id}', ${escapeAttr(company.name)})">
+          ＋ 変更分を追加
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// 会社書類1行
+function buildCompanyDocRow(koji, companyName, dt, changeNum) {
+  const fileKey = `${koji.id}-company-${companyName}-${dt.key}-${changeNum}`;
+  const file = docFiles[fileKey];
+  const status = file ? 'has' : 'missing';
+  const icon = file ? '✓' : '!';
+  
+  let subText = '未アップロード';
+  if (file) {
+    const sizeText = formatFileSize(file.size);
+    const dateText = file.modified ? new Date(file.modified).toLocaleDateString('ja-JP') : '';
+    subText = `${file.fileName} · ${sizeText}${dateText ? ' · ' + dateText : ''}`;
+  }
+  
+  return `
+    <div class="doc-row ${status}" style="margin-left:24px;">
+      <div class="doc-icon">${icon}</div>
+      <div class="doc-info">
+        <div class="doc-name">${dt.label}</div>
+        <div class="doc-sub">${escapeHtml(subText)}</div>
+      </div>
+      <div class="doc-actions">
+        ${file ? `
+          <button class="icon-btn" onclick="openPdfPreviewCompany('${koji.id}', ${escapeAttr(companyName)}, '${dt.key}', ${changeNum})" title="プレビュー">🔍</button>
+          <button class="icon-btn" onclick="downloadFileCompany('${koji.id}', ${escapeAttr(companyName)}, '${dt.key}', ${changeNum})" title="ダウンロード">↓</button>
+          <button class="icon-btn primary" onclick="triggerUploadCompany('${koji.id}', ${escapeAttr(companyName)}, '${dt.key}', ${changeNum})" title="差し替え">↑</button>
+          <button class="icon-btn danger" onclick="deleteCompanyDoc('${koji.id}', ${escapeAttr(companyName)}, '${dt.key}', ${changeNum})" title="削除">🗑</button>
+        ` : `
+          <button class="upload-btn-text" onclick="triggerUploadCompany('${koji.id}', ${escapeAttr(companyName)}, '${dt.key}', ${changeNum})">↑ アップロード</button>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+// 文字列を onclick の引数として使えるように引用符でエスケープ
+function escapeAttr(str) {
+  if (!str) return "''";
+  return "'" + String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
 }
 
 function closeDetailModal() {
@@ -1871,8 +2393,13 @@ let isEditingKoji = false;
 function renderKojiInfo(koji) {
   if (isEditingKoji) {
     // 編集モード
+    const currentType = koji.type || '公共';
     document.getElementById('detail-info').innerHTML = `
       <div class="label">工事名</div><div><input type="text" class="form-input edit-input" id="edit-name" value="${escapeHtml(koji.name || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">種別</div><div>
+        <label class="type-radio" style="padding:3px 10px;font-size:12px;"><input type="radio" name="edit-type" value="公共" ${currentType === '公共' ? 'checked' : ''}><span>公共</span></label>
+        <label class="type-radio" style="padding:3px 10px;font-size:12px;margin-left:6px;"><input type="radio" name="edit-type" value="民間" ${currentType === '民間' ? 'checked' : ''}><span>民間</span></label>
+      </div>
       <div class="label">工事番号</div><div><input type="text" class="form-input edit-input" id="edit-number" value="${escapeHtml(koji.number || '')}" style="padding:4px 8px;font-size:13px;"></div>
       <div class="label">発注者</div><div><input type="text" class="form-input edit-input" id="edit-client" value="${escapeHtml(koji.client || '')}" style="padding:4px 8px;font-size:13px;"></div>
       <div class="label">現場担当</div><div><input type="text" class="form-input edit-input" id="edit-field" value="${escapeHtml(koji.field || '')}" style="padding:4px 8px;font-size:13px;"></div>
@@ -1934,8 +2461,10 @@ async function toggleEditKoji() {
     }
     
     const oldName = koji.name;
+    const typeEl = document.querySelector('input[name="edit-type"]:checked');
     const newData = {
       name: newName,
+      type: typeEl ? typeEl.value : (koji.type || '公共'),
       number: document.getElementById('edit-number').value.trim(),
       client: document.getElementById('edit-client').value.trim(),
       field: document.getElementById('edit-field').value.trim(),
@@ -1973,14 +2502,8 @@ async function toggleEditKoji() {
       // 詳細画面のタイトルも更新
       document.getElementById('detail-title').textContent = koji.name;
       
-      // タグも更新
-      const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
-      const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
-      document.getElementById('detail-tags').innerHTML = `
-        <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
-        <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
-        ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
-      `;
+      // 詳細画面のタグなど更新
+      refreshDetailView(koji);
       
       // 情報カードと一覧も再描画
       renderKojiInfo(koji);
@@ -2009,10 +2532,18 @@ async function changeKojiStatus(kojiId, newStatus) {
   
   // 受注 → 施工中 のとき、書類が揃ってるかチェック
   if (oldStatus === '受注' && newStatus === '施工中') {
-    const missingDocs = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing');
-    if (missingDocs.length > 0) {
+    // 共通書類の不足
+    const missingCommon = getDocTypes(koji).filter(d => getDocStatus(koji, d.key) === 'missing');
+    // 会社書類の不足
+    const incompleteCompanies = (koji.companies || []).filter(c => !isCompanyDocsComplete(koji, c.name));
+    
+    if (missingCommon.length > 0 || incompleteCompanies.length > 0) {
       // 書類不足の警告ダイアログ
-      const missingList = missingDocs.map(d => `・${d.label}`).join('<br>');
+      let missingList = missingCommon.map(d => `・${d.label}`).join('<br>');
+      if (incompleteCompanies.length > 0) {
+        const companyLines = incompleteCompanies.map(c => `・${c.name} の注文書・請書`).join('<br>');
+        missingList = missingList ? missingList + '<br>' + companyLines : companyLines;
+      }
       confirmed = await showConfirm({
         title: '書類が不足しています',
         messageHtml: `以下の書類がまだアップロードされていません:<br><div style="margin-top:10px;text-align:left;display:inline-block;color:var(--danger-fg);font-weight:500;">${missingList}</div><br><br>このまま${buildStatusText('施工中')}に変更しますか?`,
@@ -2052,14 +2583,8 @@ async function changeKojiStatus(kojiId, newStatus) {
     showToast('ステータスを更新中...');
     await saveKojiList();
     
-    // 詳細モーダルのタグ表示も更新
-    const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
-    const statusClass = newStatus === '受注' ? 's-uketu' : newStatus === '施工中' ? 's-shiko' : 's-kanko';
-    document.getElementById('detail-tags').innerHTML = `
-      <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
-      <span class="s-pill ${statusClass}">${escapeHtml(newStatus)}</span>
-      ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
-    `;
+    // 詳細モーダルのタグ表示も更新（refreshDetailViewで一括）
+    refreshDetailView(koji);
     
     // タイムラインを再描画
     redrawTimeline(koji);
@@ -2117,8 +2642,11 @@ async function deleteKoji() {
   const koji = kojiList.find(k => k.id === currentKojiId);
   if (!koji) return;
   
-  // 関連書類の数
-  const docCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'has').length;
+  // 関連書類の数（共通＋会社全部）
+  let docCount = 0;
+  for (const key of Object.keys(docFiles)) {
+    if (key.startsWith(`${koji.id}-`)) docCount++;
+  }
   
   // 確認ダイアログ
   const ok = await showConfirm({
@@ -2152,9 +2680,11 @@ async function deleteKoji() {
     // メモリ上のデータを削除
     kojiList = kojiList.filter(k => k.id !== koji.id);
     delete kojiFolderIds[koji.id];
-    // 関連する書類情報も削除
-    for (const docType of DOC_TYPES) {
-      delete docFiles[`${koji.id}-${docType.key}`];
+    // 関連する書類情報も削除（プレフィックスマッチ）
+    for (const key of Object.keys(docFiles)) {
+      if (key.startsWith(`${koji.id}-`)) {
+        delete docFiles[key];
+      }
     }
     
     // OneDriveの工事一覧JSON更新
@@ -2177,15 +2707,16 @@ async function deleteKoji() {
 // ============================================================
 // 書類削除
 // ============================================================
-async function deleteDoc(kojiId, docKey) {
-  const fileKey = `${kojiId}-${docKey}`;
+// 共通書類の削除
+async function deleteCommonDoc(kojiId, docKey) {
+  const fileKey = `${kojiId}-common-${docKey}`;
   const file = docFiles[fileKey];
   if (!file) return;
   
-  const docType = DOC_TYPES.find(d => d.key === docKey);
+  const koji = kojiList.find(k => k.id === kojiId);
+  const docType = getDocTypes(koji).find(d => d.key === docKey);
   const docLabel = docType ? docType.label : '書類';
   
-  // 確認ダイアログ
   const ok = await showConfirm({
     title: '書類の削除',
     message: `${docLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。\nこの操作は取り消せません。`,
@@ -2193,39 +2724,15 @@ async function deleteDoc(kojiId, docKey) {
     cancelText: 'キャンセル',
     type: 'danger'
   });
-  if (!ok) {
-    return;
-  }
+  if (!ok) return;
   
   try {
     showToast('削除中...');
-    
-    // OneDriveから削除
     await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
-    
-    // キャッシュから削除
     delete docFiles[fileKey];
-    
-    // 再描画
-    const koji = kojiList.find(k => k.id === kojiId);
-    if (koji) {
-      renderDocList(koji);
-      const hasCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'has').length;
-      document.getElementById('doc-count').textContent = `${hasCount} / ${DOC_TYPES.length} 揃っています`;
-      
-      // タグも更新
-      const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
-      const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
-      document.getElementById('detail-tags').innerHTML = `
-        <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
-        <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
-        ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
-      `;
-    }
-    
+    refreshDetailView(koji);
     renderList();
     renderStats();
-    
     showToast(`${docLabel}を削除しました`);
   } catch (err) {
     console.error('削除エラー:', err);
@@ -2233,12 +2740,221 @@ async function deleteDoc(kojiId, docKey) {
   }
 }
 
+// 会社書類の削除
+async function deleteCompanyDoc(kojiId, companyName, docKey, changeNum) {
+  const fileKey = `${kojiId}-company-${companyName}-${docKey}-${changeNum}`;
+  const file = docFiles[fileKey];
+  if (!file) return;
+  
+  const docType = COMPANY_DOC_TYPES.find(d => d.key === docKey);
+  const docLabel = docType ? docType.label : '書類';
+  const changeLabel = changeNum > 0 ? ` (変更${changeNum})` : '';
+  
+  const ok = await showConfirm({
+    title: '書類の削除',
+    message: `${companyName} の ${docLabel}${changeLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  try {
+    showToast('削除中...');
+    await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
+    delete docFiles[fileKey];
+    const koji = kojiList.find(k => k.id === kojiId);
+    refreshDetailView(koji);
+    renderList();
+    renderStats();
+    showToast(`${docLabel}を削除しました`);
+  } catch (err) {
+    console.error('削除エラー:', err);
+    showToast('削除に失敗しました: ' + err.message, 'error');
+  }
+}
+
+// 詳細画面の各エリアを更新する共通処理
+function refreshDetailView(koji) {
+  if (!koji) return;
+  renderDocList(koji);
+  const rate = calcCompletionRate(koji);
+  document.getElementById('doc-count').textContent = `${rate.done} / ${rate.total} 揃っています`;
+  
+  const missingCount = countMissingDocs(koji);
+  const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
+  const typeClass = koji.type === '民間' ? 'type-minkan' : 'type-public';
+  document.getElementById('detail-tags').innerHTML = `
+    <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
+    <span class="type-pill ${typeClass}">${escapeHtml(koji.type || '公共')}</span>
+    <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
+    ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
+  `;
+}
+
 // ============================================================
-// ファイルアップロード
+// 会社の追加・削除・変更分追加
 // ============================================================
-function triggerUpload(kojiId, docKey) {
-  currentKojiId = kojiId;
-  currentDocKey = docKey;
+async function openAddCompanyDialog(kojiId) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji) return;
+  
+  const companyName = await showPrompt({
+    title: '会社を追加',
+    label: '会社名を入力してください（例：△△建設株式会社）',
+    placeholder: '〜株式会社'
+  });
+  
+  if (!companyName) return;
+  
+  if (!koji.companies) koji.companies = [];
+  if (koji.companies.some(c => c.name === companyName)) {
+    showToast('同じ名前の会社が既に登録されています', 'error');
+    return;
+  }
+  
+  // ファイル名に使えない文字を除外
+  if (/[\\\/:*?"<>|]/.test(companyName)) {
+    showToast('会社名に使えない文字が含まれています ( \\ / : * ? " < > | )', 'error');
+    return;
+  }
+  // アンダースコアもファイル名解析に使うのでNG
+  if (companyName.includes('_')) {
+    showToast('会社名にアンダースコア（_）は使えません', 'error');
+    return;
+  }
+  
+  koji.companies.push({ name: companyName, changes: 0 });
+  
+  try {
+    showToast('保存中...');
+    await saveKojiList();
+    refreshDetailView(koji);
+    renderList();
+    renderStats();
+    showToast(`「${companyName}」を追加しました`);
+  } catch (err) {
+    koji.companies = koji.companies.filter(c => c.name !== companyName);
+    console.error('会社追加エラー:', err);
+    showToast('保存に失敗しました', 'error');
+  }
+}
+
+async function deleteCompany(kojiId, companyName) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji || !koji.companies) return;
+  
+  let fileCount = 0;
+  for (const key of Object.keys(docFiles)) {
+    if (key.startsWith(`${kojiId}-company-${companyName}-`)) fileCount++;
+  }
+  
+  const ok = await showConfirm({
+    title: '会社を削除',
+    message: `「${companyName}」を削除します。\n${fileCount > 0 ? `関連する書類${fileCount}件もOneDriveから削除されます。\n` : ''}この操作は取り消せません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  try {
+    showToast('削除中...');
+    
+    for (const key of Object.keys(docFiles)) {
+      if (key.startsWith(`${kojiId}-company-${companyName}-`)) {
+        try {
+          await graphApi('DELETE', `/drives/${sharedDriveId}/items/${docFiles[key].fileId}`);
+        } catch (err) {
+          console.warn('ファイル削除失敗:', err);
+        }
+        delete docFiles[key];
+      }
+    }
+    
+    koji.companies = koji.companies.filter(c => c.name !== companyName);
+    await saveKojiList();
+    
+    refreshDetailView(koji);
+    renderList();
+    renderStats();
+    showToast(`「${companyName}」を削除しました`);
+  } catch (err) {
+    console.error('会社削除エラー:', err);
+    showToast('削除に失敗しました: ' + err.message, 'error');
+  }
+}
+
+async function addCompanyChange(kojiId, companyName) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji || !koji.companies) return;
+  
+  const company = koji.companies.find(c => c.name === companyName);
+  if (!company) return;
+  
+  company.changes = (company.changes || 0) + 1;
+  
+  try {
+    showToast('保存中...');
+    await saveKojiList();
+    refreshDetailView(koji);
+    showToast(`変更${company.changes}を追加しました`);
+  } catch (err) {
+    company.changes--;
+    console.error('変更追加エラー:', err);
+    showToast('保存に失敗しました', 'error');
+  }
+}
+
+// プロンプト（テキスト入力ダイアログ）
+function showPrompt(options) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('prompt-modal');
+    document.getElementById('prompt-title').textContent = options.title || '入力';
+    document.getElementById('prompt-label').textContent = options.label || '';
+    const input = document.getElementById('prompt-input');
+    input.value = '';
+    input.placeholder = options.placeholder || '';
+    
+    modal.classList.add('active');
+    setTimeout(() => input.focus(), 100);
+    
+    const okBtn = document.getElementById('prompt-ok-btn');
+    const cancelBtn = document.getElementById('prompt-cancel-btn');
+    
+    const close = (result) => {
+      modal.classList.remove('active');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      input.onkeydown = null;
+      resolve(result);
+    };
+    
+    okBtn.onclick = () => {
+      const value = input.value.trim();
+      close(value || null);
+    };
+    cancelBtn.onclick = () => close(null);
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') okBtn.click();
+      if (e.key === 'Escape') cancelBtn.click();
+    };
+  });
+}
+
+// ============================================================
+// ファイルアップロード（共通書類）
+// ============================================================
+// アップロード対象を識別する一時情報
+let uploadContext = null;
+
+function triggerUploadCommon(kojiId, docKey) {
+  uploadContext = { type: 'common', kojiId, docKey };
+  document.getElementById('upload-input').click();
+}
+
+function triggerUploadCompany(kojiId, companyName, docKey, changeNum) {
+  uploadContext = { type: 'company', kojiId, companyName, docKey, changeNum };
   document.getElementById('upload-input').click();
 }
 
@@ -2252,14 +2968,13 @@ document.getElementById('upload-input').addEventListener('change', async functio
     return;
   }
   
-  const koji = kojiList.find(k => k.id === currentKojiId);
-  if (!koji) {
+  if (!uploadContext) {
     e.target.value = '';
     return;
   }
   
-  const docType = DOC_TYPES.find(d => d.key === currentDocKey);
-  if (!docType) {
+  const koji = kojiList.find(k => k.id === uploadContext.kojiId);
+  if (!koji) {
     e.target.value = '';
     return;
   }
@@ -2267,69 +2982,85 @@ document.getElementById('upload-input').addEventListener('change', async functio
   try {
     showToast('アップロード中...');
     
-    // 工事フォルダを取得 or 作成
     const folderId = await getOrCreateKojiFolder(koji);
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const safeKojiName = sanitizeFolderName(koji.name);
+    
+    let fileKey, newFileName, docLabel;
+    
+    if (uploadContext.type === 'common') {
+      // 共通書類
+      const docType = getDocTypes(koji).find(d => d.key === uploadContext.docKey);
+      if (!docType) {
+        e.target.value = '';
+        return;
+      }
+      fileKey = `${uploadContext.kojiId}-common-${uploadContext.docKey}`;
+      newFileName = `${docType.filePrefix}_${safeKojiName}_${timestamp}.pdf`;
+      docLabel = docType.label;
+    } else {
+      // 会社書類
+      const docType = COMPANY_DOC_TYPES.find(d => d.key === uploadContext.docKey);
+      if (!docType) {
+        e.target.value = '';
+        return;
+      }
+      const changePart = uploadContext.changeNum > 0 ? `_変更${uploadContext.changeNum}` : '';
+      fileKey = `${uploadContext.kojiId}-company-${uploadContext.companyName}-${uploadContext.docKey}-${uploadContext.changeNum}`;
+      newFileName = `${uploadContext.companyName}_${docType.filePrefix}${changePart}_${safeKojiName}_${timestamp}.pdf`;
+      docLabel = `${uploadContext.companyName} の${docType.label}`;
+    }
     
     // 古いファイルがあれば削除
-    const oldFileKey = `${currentKojiId}-${currentDocKey}`;
-    if (docFiles[oldFileKey]) {
+    if (docFiles[fileKey]) {
       try {
-        await graphApi('DELETE', `/drives/${sharedDriveId}/items/${docFiles[oldFileKey].fileId}`);
+        await graphApi('DELETE', `/drives/${sharedDriveId}/items/${docFiles[fileKey].fileId}`);
       } catch (err) {
         console.warn('古いファイルの削除に失敗:', err);
       }
     }
     
-    // ファイル名を「種別_工事名_日時.pdf」形式に
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const safeKojiName = sanitizeFolderName(koji.name);
-    const newFileName = `${docType.filePrefix}_${safeKojiName}_${timestamp}.pdf`;
-    
-    // アップロード（業務用ドライブの工事フォルダに）
+    // アップロード
     const arrayBuffer = await file.arrayBuffer();
     const result = await graphApi('PUT', `/drives/${sharedDriveId}/items/${folderId}:/${encodeURIComponent(newFileName)}:/content`, arrayBuffer);
     
-    // キャッシュ更新
-    docFiles[oldFileKey] = {
+    docFiles[fileKey] = {
       fileId: result.id,
       fileName: result.name,
       size: result.size,
       modified: result.lastModifiedDateTime
     };
     
-    // 再描画
-    renderDocList(koji);
-    const hasCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'has').length;
-    document.getElementById('doc-count').textContent = `${hasCount} / ${DOC_TYPES.length} 揃っています`;
-    
-    const missingCount = DOC_TYPES.filter(d => getDocStatus(koji, d.key) === 'missing').length;
-    const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
-    document.getElementById('detail-tags').innerHTML = `
-      <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
-      <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
-      ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
-    `;
-    
+    refreshDetailView(koji);
     renderList();
     renderStats();
     
-    showToast(`${docType.label}をアップロードしました`);
+    showToast(`${docLabel}をアップロードしました`);
   } catch (err) {
     console.error('アップロードエラー:', err);
     showToast('アップロードに失敗しました: ' + err.message, 'error');
   }
   
+  uploadContext = null;
   e.target.value = '';
 });
 
 // ============================================================
 // ダウンロード
 // ============================================================
-async function downloadFile(kojiId, docKey) {
-  const fileKey = `${kojiId}-${docKey}`;
+async function downloadFileCommon(kojiId, docKey) {
+  const fileKey = `${kojiId}-common-${docKey}`;
+  await downloadFileGeneric(fileKey);
+}
+
+async function downloadFileCompany(kojiId, companyName, docKey, changeNum) {
+  const fileKey = `${kojiId}-company-${companyName}-${docKey}-${changeNum}`;
+  await downloadFileGeneric(fileKey);
+}
+
+async function downloadFileGeneric(fileKey) {
   const file = docFiles[fileKey];
   if (!file) return;
-  
   try {
     showToast('ダウンロード準備中...');
     const blob = await graphApi('GET', `/drives/${sharedDriveId}/items/${file.fileId}/content`, null, true);
@@ -2351,8 +3082,17 @@ async function downloadFile(kojiId, docKey) {
 // ============================================================
 // PDFプレビュー
 // ============================================================
-async function openPdfPreview(kojiId, docKey) {
-  const fileKey = `${kojiId}-${docKey}`;
+async function openPdfPreviewCommon(kojiId, docKey) {
+  const fileKey = `${kojiId}-common-${docKey}`;
+  await openPdfPreviewGeneric(fileKey);
+}
+
+async function openPdfPreviewCompany(kojiId, companyName, docKey, changeNum) {
+  const fileKey = `${kojiId}-company-${companyName}-${docKey}-${changeNum}`;
+  await openPdfPreviewGeneric(fileKey);
+}
+
+async function openPdfPreviewGeneric(fileKey) {
   const file = docFiles[fileKey];
   if (!file) return;
   
@@ -2455,6 +3195,8 @@ function openNewModal() {
   document.getElementById('new-sales').value = '';
   document.getElementById('new-field').value = '';
   document.getElementById('new-status').value = '受注';
+  // 種別はデフォルト「公共」
+  document.querySelector('input[name="new-type"][value="公共"]').checked = true;
   document.getElementById('new-modal').classList.add('active');
   setTimeout(() => document.getElementById('new-name').focus(), 100);
 }
@@ -2471,6 +3213,9 @@ async function saveNewKoji() {
     return;
   }
   
+  const typeEl = document.querySelector('input[name="new-type"]:checked');
+  const type = typeEl ? typeEl.value : '公共';
+  
   const saveBtn = document.getElementById('save-new-btn');
   saveBtn.disabled = true;
   
@@ -2478,11 +3223,13 @@ async function saveNewKoji() {
     const newKoji = {
       id: 'koji_' + Date.now(),
       name: name,
+      type: type,
       number: document.getElementById('new-number').value.trim(),
       status: document.getElementById('new-status').value,
       client: document.getElementById('new-client').value.trim(),
       sales: document.getElementById('new-sales').value.trim(),
       field: document.getElementById('new-field').value.trim(),
+      companies: [],
       createdAt: new Date().toISOString()
     };
     
@@ -2619,7 +3366,8 @@ document.getElementById('search-input').addEventListener('input', renderList);
 // モーダル外側クリックで閉じる
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   if (overlay.id === 'loading-overlay') return;
-  if (overlay.id === 'confirm-modal') return; // 確認ダイアログは外側クリック無効（明示的にボタンで操作）
+  if (overlay.id === 'confirm-modal') return;
+  if (overlay.id === 'prompt-modal') return;
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
       overlay.classList.remove('active');
