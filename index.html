@@ -765,6 +765,24 @@
     background: #F8E5DD;
     color: #791F1F;
   }
+  .change-delete-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 6px;
+    color: var(--text-tertiary);
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.15s;
+  }
+  .change-delete-btn:hover {
+    color: var(--danger-fg);
+    background: var(--danger-bg);
+    opacity: 1;
+  }
   .add-change-btn {
     margin-top: 6px;
     margin-left: 24px;
@@ -2312,6 +2330,7 @@ function buildCompanyCard(koji, company) {
         <div class="change-header">
           <span class="change-label">変更 ${i}</span>
           ${changeComplete ? '<span class="change-status done">✓ 揃っています</span>' : '<span class="change-status pending">不足あり</span>'}
+          <button class="change-delete-btn" onclick="deleteCompanyChange('${koji.id}', ${escapeAttr(company.name)}, ${i})" title="この変更を削除">×</button>
         </div>
         ${COMPANY_DOC_TYPES.map(dt => buildCompanyDocRow(koji, company.name, dt, i)).join('')}
       </div>
@@ -2903,6 +2922,67 @@ async function addCompanyChange(kojiId, companyName) {
     company.changes--;
     console.error('変更追加エラー:', err);
     showToast('保存に失敗しました', 'error');
+  }
+}
+
+// 変更分の削除
+async function deleteCompanyChange(kojiId, companyName, changeNum) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji || !koji.companies) return;
+  
+  const company = koji.companies.find(c => c.name === companyName);
+  if (!company) return;
+  
+  // 最後の変更しか削除できない（番号の整合性のため）
+  if (changeNum !== company.changes) {
+    showToast(`変更${changeNum}は削除できません。最新の変更（変更${company.changes}）から順に削除してください`, 'error');
+    return;
+  }
+  
+  // この変更分のファイル数を数える
+  let fileCount = 0;
+  for (const dt of COMPANY_DOC_TYPES) {
+    const fileKey = `${kojiId}-company-${companyName}-${dt.key}-${changeNum}`;
+    if (docFiles[fileKey]) fileCount++;
+  }
+  
+  const ok = await showConfirm({
+    title: '変更を削除',
+    messageHtml: `${escapeHtml(companyName)} の <b>変更${changeNum}</b> を削除します。<br>` +
+                 (fileCount > 0 ? `<div style="margin-top:8px;color:var(--danger-fg);">関連する書類${fileCount}件もOneDriveから削除されます。</div>` : '') +
+                 `<br>この操作は取り消せません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  try {
+    showToast('削除中...');
+    
+    // 関連ファイルを削除
+    for (const dt of COMPANY_DOC_TYPES) {
+      const fileKey = `${kojiId}-company-${companyName}-${dt.key}-${changeNum}`;
+      if (docFiles[fileKey]) {
+        try {
+          await graphApi('DELETE', `/drives/${sharedDriveId}/items/${docFiles[fileKey].fileId}`);
+        } catch (err) {
+          console.warn('ファイル削除失敗:', err);
+        }
+        delete docFiles[fileKey];
+      }
+    }
+    
+    company.changes--;
+    await saveKojiList();
+    
+    refreshDetailView(koji);
+    renderList();
+    renderStats();
+    showToast(`変更${changeNum}を削除しました`);
+  } catch (err) {
+    console.error('変更削除エラー:', err);
+    showToast('削除に失敗しました: ' + err.message, 'error');
   }
 }
 
