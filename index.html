@@ -295,6 +295,24 @@
   }
   .alert-item:hover { background: var(--bg-secondary); }
   .alert-item:last-child { border-bottom: none; }
+  .alert-item.critical {
+    background: #FCEBEB;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    border-bottom: none;
+    padding: 10px 8px;
+  }
+  .alert-item.critical:hover {
+    background: #F8DDDD;
+  }
+  .alert-item.critical .alert-item-name {
+    color: #791F1F;
+    font-weight: 600;
+  }
+  .alert-item.critical .alert-item-reason {
+    color: #A32D2D;
+    font-weight: 600;
+  }
   .alert-item-name { flex: 1; font-weight: 500; }
   .alert-item-reason { color: var(--danger-fg); font-size: 11px; }
   .alert-item-status { font-size: 11px; color: var(--text-secondary); }
@@ -836,6 +854,132 @@
     color: #854F0B;
   }
   
+  /* === 履歴セクション === */
+  .history-section {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 2px solid var(--border);
+  }
+  .history-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .history-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .history-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .memo-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    align-items: stretch;
+  }
+  .memo-textarea {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 50px;
+    background: white;
+  }
+  .memo-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .memo-post-btn {
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding: 8px 18px;
+  }
+  .history-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
+  }
+  .history-empty {
+    text-align: center;
+    padding: 28px 0;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+  .history-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    border-left: 3px solid transparent;
+  }
+  .history-item:last-child {
+    border-bottom: none;
+  }
+  .history-item.auto {
+    border-left-color: var(--border-strong);
+    background: var(--bg-secondary);
+  }
+  .history-item.memo {
+    border-left-color: var(--primary);
+    background: white;
+  }
+  .history-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .history-icon {
+    font-size: 13px;
+  }
+  .history-author {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .history-date {
+    color: var(--text-tertiary);
+  }
+  .history-item-text {
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin-left: 22px;
+  }
+  .memo-text {
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .history-action-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.15s;
+  }
+  .history-action-btn:hover {
+    background: var(--bg-secondary);
+    opacity: 1;
+  }
+  .history-action-btn.danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+  }
+  /* 編集・削除ボタンが2つあるとき、削除を最後にしてauto marginを取り消す */
+  .history-action-btn + .history-action-btn {
+    margin-left: 0;
+  }
+  
   /* === ステータス変更プルダウン === */
   .status-select {
     width: 100%;
@@ -1225,6 +1369,19 @@
           <div class="doc-section-count" id="doc-count"></div>
         </div>
         <div id="doc-list"></div>
+      </div>
+      
+      <!-- 履歴セクション -->
+      <div class="history-section">
+        <div class="history-header">
+          <div class="history-title">📋 履歴・業務メモ</div>
+          <div class="history-count" id="history-count"></div>
+        </div>
+        <div class="memo-input-row">
+          <textarea id="memo-input" class="memo-textarea" placeholder="業務メモを入力（連絡事項、注意点など）..." rows="2"></textarea>
+          <button class="btn-primary memo-post-btn" onclick="postMemo()">投稿</button>
+        </div>
+        <div id="history-list" class="history-list"></div>
       </div>
     </div>
   </div>
@@ -1785,6 +1942,52 @@ async function saveKojiList() {
 }
 
 // ============================================================
+// 履歴の管理（自動記録＋手動メモ）
+// ============================================================
+const MAX_HISTORY = 100; // 工事ごとに最大100件まで
+
+// 現在ログイン中のユーザー名を取得
+function getCurrentUserName() {
+  if (currentUser) {
+    return currentUser.name || currentUser.username || '不明';
+  }
+  return '不明';
+}
+
+// 履歴を追加（自動記録）
+function addHistory(koji, action, text) {
+  if (!koji.history) koji.history = [];
+  koji.history.unshift({
+    id: 'hist_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    type: 'auto',
+    action: action,
+    author: getCurrentUserName(),
+    createdAt: new Date().toISOString(),
+    text: text
+  });
+  // 上限を超えたら古いものを削除
+  if (koji.history.length > MAX_HISTORY) {
+    koji.history = koji.history.slice(0, MAX_HISTORY);
+  }
+}
+
+// メモを追加（手動投稿）
+function addMemo(koji, text) {
+  if (!koji.history) koji.history = [];
+  koji.history.unshift({
+    id: 'memo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    type: 'memo',
+    author: getCurrentUserName(),
+    authorId: currentUser?.username || '',  // 編集権限チェック用
+    createdAt: new Date().toISOString(),
+    text: text
+  });
+  if (koji.history.length > MAX_HISTORY) {
+    koji.history = koji.history.slice(0, MAX_HISTORY);
+  }
+}
+
+// ============================================================
 // 工事フォルダ管理
 // ============================================================
 async function getOrCreateKojiFolder(koji) {
@@ -1942,19 +2145,35 @@ function renderAlerts() {
   const alerts = [];
   const now = new Date();
   const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
   
   for (const koji of kojiList) {
     if (koji.status === '完工') continue; // 完工は対象外
     
     const missingCount = countMissingDocs(koji);
     
-    // 優先度1：施工中で書類不足
+    // 優先度1：施工中で書類不足、しかも1週間以上経過 → 最優先
     if (koji.status === '施工中' && missingCount > 0) {
-      alerts.push({
-        koji,
-        priority: 1,
-        reason: `書類${missingCount}件不足`
-      });
+      const changedAt = koji.statusChangedAt ? new Date(koji.statusChangedAt) : null;
+      const elapsedMs = changedAt ? now - changedAt : 0;
+      const elapsedDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
+      
+      if (changedAt && elapsedMs >= SEVEN_DAYS_MS) {
+        // 1週間以上経過 → 最優先（赤）
+        alerts.push({
+          koji,
+          priority: 0,
+          reason: `🔴 書類不足のまま ${elapsedDays}日経過`,
+          critical: true
+        });
+      } else {
+        // 1週間未満は通常の施工中アラート
+        alerts.push({
+          koji,
+          priority: 1,
+          reason: `書類${missingCount}件不足` + (elapsedDays > 0 ? `（${elapsedDays}日経過）` : '')
+        });
+      }
       continue;
     }
     
@@ -1999,11 +2218,12 @@ function renderAlerts() {
   const displayed = alerts.slice(0, 5);
   listEl.innerHTML = displayed.map(a => {
     const statusClass = a.koji.status === '受注' ? 's-uketu' : a.koji.status === '施工中' ? 's-shiko' : 's-kanko';
+    const itemClass = a.critical ? 'alert-item critical' : 'alert-item';
     return `
-      <div class="alert-item" onclick="openDetailModal('${a.koji.id}')">
+      <div class="${itemClass}" onclick="openDetailModal('${a.koji.id}')">
         <div class="alert-item-name">${escapeHtml(a.koji.name)}</div>
         <div><span class="s-pill ${statusClass}">${escapeHtml(a.koji.status)}</span></div>
-        <div class="alert-item-reason">${escapeHtml(a.reason)}</div>
+        <div class="alert-item-reason">${a.reason}</div>
       </div>
     `;
   }).join('');
@@ -2597,6 +2817,10 @@ async function changeKojiStatus(kojiId, newStatus) {
   
   // 楽観的に更新
   koji.status = newStatus;
+  koji.statusChangedAt = new Date().toISOString();  // ステータス変更日時を記録
+  
+  // 履歴記録：ステータス変更
+  addHistory(koji, 'status_change', `ステータスを「${oldStatus} → ${newStatus}」に変更`);
   
   try {
     showToast('ステータスを更新中...');
@@ -2616,6 +2840,7 @@ async function changeKojiStatus(kojiId, newStatus) {
   } catch (err) {
     // 失敗時はロールバック
     koji.status = oldStatus;
+    delete koji.statusChangedAt;  // 更新失敗したので戻す
     console.error('ステータス更新エラー:', err);
     showToast('ステータスの更新に失敗しました', 'error');
     // プルダウンも元に戻す
@@ -2749,6 +2974,11 @@ async function deleteCommonDoc(kojiId, docKey) {
     showToast('削除中...');
     await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
     delete docFiles[fileKey];
+    
+    // 履歴記録
+    addHistory(koji, 'doc_delete', `${docLabel}を削除`);
+    await saveKojiList();
+    
     refreshDetailView(koji);
     renderList();
     renderStats();
@@ -2783,6 +3013,14 @@ async function deleteCompanyDoc(kojiId, companyName, docKey, changeNum) {
     await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
     delete docFiles[fileKey];
     const koji = kojiList.find(k => k.id === kojiId);
+    
+    // 履歴記録
+    const fullLabel = `${companyName} の${docLabel}${changeLabel}`;
+    if (koji) {
+      addHistory(koji, 'doc_delete', `${fullLabel}を削除`);
+      await saveKojiList();
+    }
+    
     refreshDetailView(koji);
     renderList();
     renderStats();
@@ -2809,6 +3047,204 @@ function refreshDetailView(koji) {
     <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
     ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
   `;
+  
+  // 履歴を描画
+  renderHistory(koji);
+}
+
+// 履歴セクションを描画
+function renderHistory(koji) {
+  const history = koji.history || [];
+  const listEl = document.getElementById('history-list');
+  const countEl = document.getElementById('history-count');
+  
+  countEl.textContent = history.length > 0 ? `${history.length}件` : '';
+  
+  if (history.length === 0) {
+    listEl.innerHTML = '<div class="history-empty">まだ履歴がありません</div>';
+    return;
+  }
+  
+  const currentUserId = currentUser?.username || '';
+  
+  listEl.innerHTML = history.map(item => {
+    const dateStr = new Date(item.createdAt).toLocaleString('ja-JP', { 
+      year: 'numeric', month: '2-digit', day: '2-digit', 
+      hour: '2-digit', minute: '2-digit' 
+    });
+    
+    if (item.type === 'memo') {
+      // 手動メモ：投稿者本人なら編集・削除可能
+      const isOwn = item.authorId === currentUserId;
+      return `
+        <div class="history-item memo">
+          <div class="history-item-header">
+            <span class="history-icon">📝</span>
+            <span class="history-author">${escapeHtml(item.author)}</span>
+            <span class="history-date">${dateStr}</span>
+            ${isOwn ? `
+              <button class="history-action-btn" onclick="editMemo('${koji.id}', '${item.id}')" title="編集">✎</button>
+              <button class="history-action-btn danger" onclick="deleteMemo('${koji.id}', '${item.id}')" title="削除">×</button>
+            ` : ''}
+          </div>
+          <div class="history-item-text memo-text">${escapeHtml(item.text)}</div>
+        </div>
+      `;
+    } else {
+      // 自動記録
+      return `
+        <div class="history-item auto">
+          <div class="history-item-header">
+            <span class="history-icon">📋</span>
+            <span class="history-author">${escapeHtml(item.author)}</span>
+            <span class="history-date">${dateStr}</span>
+          </div>
+          <div class="history-item-text">${escapeHtml(item.text)}</div>
+        </div>
+      `;
+    }
+  }).join('');
+}
+
+// メモ投稿
+async function postMemo() {
+  const koji = kojiList.find(k => k.id === currentKojiId);
+  if (!koji) return;
+  
+  const input = document.getElementById('memo-input');
+  const text = input.value.trim();
+  if (!text) {
+    showToast('メモを入力してください', 'error');
+    input.focus();
+    return;
+  }
+  
+  try {
+    addMemo(koji, text);
+    await saveKojiList();
+    input.value = '';
+    renderHistory(koji);
+    showToast('メモを投稿しました');
+  } catch (err) {
+    // ロールバック
+    if (koji.history && koji.history.length > 0) koji.history.shift();
+    console.error('メモ投稿エラー:', err);
+    showToast('投稿に失敗しました', 'error');
+  }
+}
+
+// メモ削除
+async function deleteMemo(kojiId, memoId) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji || !koji.history) return;
+  
+  const memoIdx = koji.history.findIndex(h => h.id === memoId);
+  if (memoIdx === -1) return;
+  
+  const memo = koji.history[memoIdx];
+  
+  // 自分のメモ以外は削除不可
+  if (memo.authorId !== (currentUser?.username || '')) {
+    showToast('自分のメモのみ削除できます', 'error');
+    return;
+  }
+  
+  const ok = await showConfirm({
+    title: 'メモを削除',
+    message: `このメモを削除します。\n「${memo.text.length > 30 ? memo.text.slice(0, 30) + '...' : memo.text}」\n\nこの操作は取り消せません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  // バックアップ
+  const removed = koji.history.splice(memoIdx, 1)[0];
+  
+  try {
+    await saveKojiList();
+    renderHistory(koji);
+    showToast('メモを削除しました');
+  } catch (err) {
+    // ロールバック
+    koji.history.splice(memoIdx, 0, removed);
+    console.error('メモ削除エラー:', err);
+    showToast('削除に失敗しました', 'error');
+  }
+}
+
+// メモ編集
+async function editMemo(kojiId, memoId) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji || !koji.history) return;
+  
+  const memo = koji.history.find(h => h.id === memoId);
+  if (!memo) return;
+  
+  // 自分のメモ以外は編集不可
+  if (memo.authorId !== (currentUser?.username || '')) {
+    showToast('自分のメモのみ編集できます', 'error');
+    return;
+  }
+  
+  const newText = await showPrompt({
+    title: 'メモを編集',
+    label: 'メモの内容を編集してください',
+    placeholder: ''
+  }, memo.text);
+  
+  if (!newText || newText === memo.text) return;
+  
+  const oldText = memo.text;
+  memo.text = newText;
+  memo.editedAt = new Date().toISOString();
+  
+  try {
+    await saveKojiList();
+    renderHistory(koji);
+    showToast('メモを更新しました');
+  } catch (err) {
+    memo.text = oldText;
+    delete memo.editedAt;
+    console.error('メモ編集エラー:', err);
+    showToast('更新に失敗しました', 'error');
+  }
+}
+
+// プロンプト（テキスト入力ダイアログ）
+function showPrompt(options, initialValue = '') {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('prompt-modal');
+    document.getElementById('prompt-title').textContent = options.title || '入力';
+    document.getElementById('prompt-label').textContent = options.label || '';
+    const input = document.getElementById('prompt-input');
+    input.value = initialValue || '';
+    input.placeholder = options.placeholder || '';
+    
+    modal.classList.add('active');
+    setTimeout(() => { input.focus(); input.select(); }, 100);
+    
+    const okBtn = document.getElementById('prompt-ok-btn');
+    const cancelBtn = document.getElementById('prompt-cancel-btn');
+    
+    const close = (result) => {
+      modal.classList.remove('active');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      input.onkeydown = null;
+      resolve(result);
+    };
+    
+    okBtn.onclick = () => {
+      const value = input.value.trim();
+      close(value || null);
+    };
+    cancelBtn.onclick = () => close(null);
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') okBtn.click();
+      if (e.key === 'Escape') cancelBtn.click();
+    };
+  });
 }
 
 // ============================================================
@@ -2986,42 +3422,6 @@ async function deleteCompanyChange(kojiId, companyName, changeNum) {
   }
 }
 
-// プロンプト（テキスト入力ダイアログ）
-function showPrompt(options) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById('prompt-modal');
-    document.getElementById('prompt-title').textContent = options.title || '入力';
-    document.getElementById('prompt-label').textContent = options.label || '';
-    const input = document.getElementById('prompt-input');
-    input.value = '';
-    input.placeholder = options.placeholder || '';
-    
-    modal.classList.add('active');
-    setTimeout(() => input.focus(), 100);
-    
-    const okBtn = document.getElementById('prompt-ok-btn');
-    const cancelBtn = document.getElementById('prompt-cancel-btn');
-    
-    const close = (result) => {
-      modal.classList.remove('active');
-      okBtn.onclick = null;
-      cancelBtn.onclick = null;
-      input.onkeydown = null;
-      resolve(result);
-    };
-    
-    okBtn.onclick = () => {
-      const value = input.value.trim();
-      close(value || null);
-    };
-    cancelBtn.onclick = () => close(null);
-    input.onkeydown = (e) => {
-      if (e.key === 'Enter') okBtn.click();
-      if (e.key === 'Escape') cancelBtn.click();
-    };
-  });
-}
-
 // ============================================================
 // ファイルアップロード（共通書類）
 // ============================================================
@@ -3091,7 +3491,8 @@ document.getElementById('upload-input').addEventListener('change', async functio
       docLabel = `${uploadContext.companyName} の${docType.label}`;
     }
     
-    // 古いファイルがあれば削除
+    // 古いファイルがあれば削除（差し替え判定用）
+    const isReplace = !!docFiles[fileKey];
     if (docFiles[fileKey]) {
       try {
         await graphApi('DELETE', `/drives/${sharedDriveId}/items/${docFiles[fileKey].fileId}`);
@@ -3110,6 +3511,11 @@ document.getElementById('upload-input').addEventListener('change', async functio
       size: result.size,
       modified: result.lastModifiedDateTime
     };
+    
+    // 履歴記録：書類アップロード
+    addHistory(koji, isReplace ? 'doc_replace' : 'doc_upload', 
+               `${docLabel}を${isReplace ? '差し替え' : 'アップロード'}`);
+    await saveKojiList();
     
     refreshDetailView(koji);
     renderList();
@@ -3310,8 +3716,12 @@ async function saveNewKoji() {
       sales: document.getElementById('new-sales').value.trim(),
       field: document.getElementById('new-field').value.trim(),
       companies: [],
+      history: [],
       createdAt: new Date().toISOString()
     };
+    
+    // 履歴記録：新規追加
+    addHistory(newKoji, 'create', `工事を新規追加（${type}）`);
     
     kojiList.unshift(newKoji);
     
