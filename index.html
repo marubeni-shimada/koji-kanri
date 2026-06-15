@@ -774,6 +774,28 @@
   
   .doc-info { flex: 1; min-width: 0; }
   .doc-name { font-size: 13px; font-weight: 500; }
+  .doc-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .uploader-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    background: #E6F1FB;
+    color: #0C447C;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .uploader-badge.unknown {
+    background: #F1EFE8;
+    color: #888780;
+  }
   .doc-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
   
   .doc-actions {
@@ -2646,18 +2668,19 @@ function openDetailModal(id) {
   renderHistory(koji);
   updateUnreadBadge(koji);
   
-  // 履歴パネルの開閉状態を初期化
-  // デフォルトは「閉じる」、前回開いてた場合は開く（ユーザー記憶）
-  const wasOpen = localStorage.getItem('historyPanelOpen') === '1';
+  // 履歴パネルの開閉：未読がある時だけ自動で開く
+  const unreadCount = countUnreadHistory(koji);
   const split = document.getElementById('detail-modal-split');
   const btn = document.getElementById('history-toggle-btn');
-  if (wasOpen) {
+  if (unreadCount > 0) {
+    // 未読あり → 自動で開く
     split.classList.remove('history-collapsed');
     btn.classList.add('active');
-    // 開いてる状態なら既読扱い
+    // 開いた瞬間に既読扱い
     markHistoryAsRead(koji.id);
     updateUnreadBadge(koji);
   } else {
+    // 未読なし → 閉じたまま
     split.classList.add('history-collapsed');
     btn.classList.remove('active');
   }
@@ -2710,11 +2733,25 @@ function buildCommonDocRow(koji, d) {
     subText = `${file.fileName} · ${sizeText}${dateText ? ' · ' + dateText : ''}`;
   }
   
+  // アップロード者バッジ
+  let uploaderBadge = '';
+  if (file) {
+    const metaKey = `common-${d.key}`;
+    const meta = koji.docMeta ? koji.docMeta[metaKey] : null;
+    const uploader = meta ? meta.uploadedBy : null;
+    uploaderBadge = uploader 
+      ? `<span class="uploader-badge">👤 ${escapeHtml(uploader)}</span>`
+      : `<span class="uploader-badge unknown">👤 不明</span>`;
+  }
+  
   return `
     <div class="doc-row ${status}">
       <div class="doc-icon">${icon}</div>
       <div class="doc-info">
-        <div class="doc-name">${d.label}</div>
+        <div class="doc-name-row">
+          <span class="doc-name">${d.label}</span>
+          ${uploaderBadge}
+        </div>
         <div class="doc-sub">${escapeHtml(subText)}</div>
       </div>
       <div class="doc-actions">
@@ -2790,11 +2827,25 @@ function buildCompanyDocRow(koji, companyName, dt, changeNum) {
     subText = `${file.fileName} · ${sizeText}${dateText ? ' · ' + dateText : ''}`;
   }
   
+  // アップロード者バッジ
+  let uploaderBadge = '';
+  if (file) {
+    const metaKey = `company-${companyName}-${dt.key}-${changeNum}`;
+    const meta = koji.docMeta ? koji.docMeta[metaKey] : null;
+    const uploader = meta ? meta.uploadedBy : null;
+    uploaderBadge = uploader 
+      ? `<span class="uploader-badge">👤 ${escapeHtml(uploader)}</span>`
+      : `<span class="uploader-badge unknown">👤 不明</span>`;
+  }
+  
   return `
     <div class="doc-row ${status}" style="margin-left:24px;">
       <div class="doc-icon">${icon}</div>
       <div class="doc-info">
-        <div class="doc-name">${dt.label}</div>
+        <div class="doc-name-row">
+          <span class="doc-name">${dt.label}</span>
+          ${uploaderBadge}
+        </div>
         <div class="doc-sub">${escapeHtml(subText)}</div>
       </div>
       <div class="doc-actions">
@@ -3175,6 +3226,12 @@ async function deleteCommonDoc(kojiId, docKey) {
     await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
     delete docFiles[fileKey];
     
+    // docMetaからも削除
+    if (koji.docMeta) {
+      const metaKey = fileKey.substring(koji.id.length + 1);
+      delete koji.docMeta[metaKey];
+    }
+    
     // 履歴記録
     addHistory(koji, 'doc_delete', `${docLabel}を削除`);
     await saveKojiList();
@@ -3213,6 +3270,12 @@ async function deleteCompanyDoc(kojiId, companyName, docKey, changeNum) {
     await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
     delete docFiles[fileKey];
     const koji = kojiList.find(k => k.id === kojiId);
+    
+    // docMetaからも削除
+    if (koji && koji.docMeta) {
+      const metaKey = fileKey.substring(koji.id.length + 1);
+      delete koji.docMeta[metaKey];
+    }
     
     // 履歴記録
     const fullLabel = `${companyName} の${docLabel}${changeLabel}`;
@@ -3327,19 +3390,16 @@ function toggleHistoryPanel() {
     // 開く
     split.classList.remove('history-collapsed');
     btn.classList.add('active');
-    // 開いた瞬間に「既読」とする
+    // 開いた瞬間に既読扱い
     const koji = kojiList.find(k => k.id === currentKojiId);
     if (koji) {
       markHistoryAsRead(koji.id);
       updateUnreadBadge(koji);
     }
-    // 設定保存
-    localStorage.setItem('historyPanelOpen', '1');
   } else {
     // 閉じる
     split.classList.add('history-collapsed');
     btn.classList.remove('active');
-    localStorage.setItem('historyPanelOpen', '0');
   }
 }
 
@@ -3801,6 +3861,15 @@ document.getElementById('upload-input').addEventListener('change', async functio
       fileName: result.name,
       size: result.size,
       modified: result.lastModifiedDateTime
+    };
+    
+    // アップロード者情報を工事データに記録（永続化）
+    if (!koji.docMeta) koji.docMeta = {};
+    // fileKeyは「kojiId-common-keyaku」など → kojiIdを除いた部分を保存キーに
+    const metaKey = fileKey.substring(koji.id.length + 1); // "common-keyaku" or "company-△△建設_chumon_0"
+    koji.docMeta[metaKey] = {
+      uploadedBy: getCurrentUserName(),
+      uploadedAt: new Date().toISOString()
     };
     
     // 履歴記録：書類アップロード
