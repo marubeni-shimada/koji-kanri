@@ -501,6 +501,64 @@
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
   }
+  /* 詳細モーダルは左右分割なので、横幅を広く＆overflow制御 */
+  #detail-modal .modal {
+    max-width: 1280px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* 左右分割レイアウト */
+  .modal-body-split {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 0;
+    padding: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+  .modal-col-left {
+    padding: 20px 24px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .modal-col-right {
+    padding: 20px 24px;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+  }
+  /* 右カラム内の履歴セクションを縦100%に */
+  .modal-col-right .history-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  /* 履歴リストは可能な限り伸びる */
+  .modal-col-right .history-list {
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+  }
+  /* レスポンシブ：画面幅が狭い時は縦並びに */
+  @media (max-width: 900px) {
+    .modal-body-split {
+      grid-template-columns: 1fr;
+    }
+    .modal-col-left {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-col-right .history-list {
+      max-height: 400px;
+    }
+  }
   .modal-header {
     padding: 18px 24px;
     border-bottom: 1px solid var(--border);
@@ -1345,43 +1403,48 @@
       </div>
       <button class="modal-close" onclick="closeDetailModal()">×</button>
     </div>
-    <div class="modal-body">
-      <div class="info-cards">
-        <div class="info-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div class="card-label" style="margin-bottom:0;">工事情報</div>
-            <div style="display:flex;gap:6px;">
-              <button class="btn-edit" id="edit-koji-btn" onclick="toggleEditKoji()">編集</button>
-              <button class="btn-delete" id="delete-koji-btn" onclick="deleteKoji()">削除</button>
+    <div class="modal-body modal-body-split">
+      <!-- 左カラム：工事情報・書類管理 -->
+      <div class="modal-col-left">
+        <div class="info-cards">
+          <div class="info-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div class="card-label" style="margin-bottom:0;">工事情報</div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-edit" id="edit-koji-btn" onclick="toggleEditKoji()">編集</button>
+                <button class="btn-delete" id="delete-koji-btn" onclick="deleteKoji()">削除</button>
+              </div>
             </div>
+            <div class="info-grid" id="detail-info"></div>
           </div>
-          <div class="info-grid" id="detail-info"></div>
+          <div class="info-card">
+            <div class="card-label">進捗</div>
+            <div id="detail-timeline"></div>
+          </div>
         </div>
-        <div class="info-card">
-          <div class="card-label">進捗</div>
-          <div id="detail-timeline"></div>
-        </div>
-      </div>
 
-      <div class="doc-section">
-        <div class="doc-section-header">
-          <div class="doc-section-title">書類管理</div>
-          <div class="doc-section-count" id="doc-count"></div>
+        <div class="doc-section">
+          <div class="doc-section-header">
+            <div class="doc-section-title">書類管理</div>
+            <div class="doc-section-count" id="doc-count"></div>
+          </div>
+          <div id="doc-list"></div>
         </div>
-        <div id="doc-list"></div>
       </div>
       
-      <!-- 履歴セクション -->
-      <div class="history-section">
-        <div class="history-header">
-          <div class="history-title">📋 履歴・業務メモ</div>
-          <div class="history-count" id="history-count"></div>
+      <!-- 右カラム：履歴・業務メモ -->
+      <div class="modal-col-right">
+        <div class="history-section">
+          <div class="history-header">
+            <div class="history-title">📋 履歴・業務メモ</div>
+            <div class="history-count" id="history-count"></div>
+          </div>
+          <div class="memo-input-row">
+            <textarea id="memo-input" class="memo-textarea" placeholder="業務メモを入力（連絡事項、注意点など）..." rows="2"></textarea>
+            <button class="btn-primary memo-post-btn" onclick="postMemo()">投稿</button>
+          </div>
+          <div id="history-list" class="history-list"></div>
         </div>
-        <div class="memo-input-row">
-          <textarea id="memo-input" class="memo-textarea" placeholder="業務メモを入力（連絡事項、注意点など）..." rows="2"></textarea>
-          <button class="btn-primary memo-post-btn" onclick="postMemo()">投稿</button>
-        </div>
-        <div id="history-list" class="history-list"></div>
       </div>
     </div>
   </div>
