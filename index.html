@@ -796,6 +796,82 @@
     background: #F1EFE8;
     color: #888780;
   }
+  
+  /* スタッフ管理モーダル */
+  .staff-section {
+    margin-bottom: 24px;
+  }
+  .staff-section:last-child {
+    margin-bottom: 0;
+  }
+  .staff-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .staff-section-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .staff-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .staff-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .staff-input-row input {
+    flex: 1;
+  }
+  .staff-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+  }
+  .staff-list:empty::before {
+    content: 'まだ登録がありません';
+    color: var(--text-tertiary);
+    font-size: 12px;
+    padding: 4px;
+  }
+  .staff-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: white;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 4px 8px 4px 12px;
+    font-size: 12px;
+  }
+  .staff-chip-name {
+    color: var(--text-primary);
+  }
+  .staff-chip-remove {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 50%;
+    transition: all 0.15s;
+  }
+  .staff-chip-remove:hover {
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+  }
   .doc-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
   
   .doc-actions {
@@ -1425,7 +1501,10 @@
       <div class="page-title">工事一覧</div>
       <div class="page-subtitle">2026年度</div>
     </div>
-    <button class="btn-primary" onclick="openNewModal()">＋ 新規工事を追加</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-ghost" onclick="openStaffModal()" title="営業担当・現場担当のリストを管理">⚙ 担当者管理</button>
+      <button class="btn-primary" onclick="openNewModal()">＋ 新規工事を追加</button>
+    </div>
   </div>
 
   <!-- ダッシュボード（要対応 + 充足率） -->
@@ -1648,11 +1727,15 @@
       <div class="form-grid-2">
         <div>
           <label class="form-label">営業担当<span class="optional-mark">任意</span></label>
-          <input type="text" class="form-input" id="new-sales" placeholder="例：山田 太郎">
+          <select class="form-input" id="new-sales">
+            <option value="">-- 選択してください --</option>
+          </select>
         </div>
         <div>
           <label class="form-label">現場担当<span class="optional-mark">任意</span></label>
-          <input type="text" class="form-input" id="new-field" placeholder="例:佐藤 健一">
+          <select class="form-input" id="new-field">
+            <option value="">-- 選択してください --</option>
+          </select>
         </div>
       </div>
     </div>
@@ -1685,6 +1768,44 @@
 </div>
 
 <input type="file" id="upload-input" class="upload-input" accept="application/pdf">
+
+<!-- 担当者管理モーダル -->
+<div class="modal-overlay" id="staff-modal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">⚙ 担当者管理</div>
+        <div class="page-subtitle" style="margin-top:4px;">営業担当・現場担当のリストを編集できます</div>
+      </div>
+      <button class="modal-close" onclick="closeStaffModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="staff-section">
+        <div class="staff-section-header">
+          <div class="staff-section-title">📣 営業担当</div>
+          <div class="staff-count" id="staff-sales-count">0人</div>
+        </div>
+        <div class="staff-input-row">
+          <input type="text" id="staff-sales-input" class="form-input" placeholder="営業担当者の名前">
+          <button class="btn-primary" onclick="addStaff('sales')">＋ 追加</button>
+        </div>
+        <div id="staff-sales-list" class="staff-list"></div>
+      </div>
+      
+      <div class="staff-section">
+        <div class="staff-section-header">
+          <div class="staff-section-title">🚧 現場担当</div>
+          <div class="staff-count" id="staff-field-count">0人</div>
+        </div>
+        <div class="staff-input-row">
+          <input type="text" id="staff-field-input" class="form-input" placeholder="現場担当者の名前">
+          <button class="btn-primary" onclick="addStaff('field')">＋ 追加</button>
+        </div>
+        <div id="staff-field-list" class="staff-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- 確認ダイアログ -->
 <div class="modal-overlay" id="confirm-modal">
@@ -1725,6 +1846,10 @@ const TENANT_ID = 'cb8a44ea-32a2-48cb-9a9d-85be9107214f';
 const SHARED_ACCOUNT = 'dgauser04@marubenishimada.onmicrosoft.com';
 const ROOT_FOLDER = '工事書類';  // 業務用アカウントの OneDrive 上のフォルダ名
 const KOJI_LIST_FILE = '_工事一覧.json';  // 工事一覧データを保存するJSONファイル
+const STAFF_LIST_FILE = '_スタッフ.json';  // 担当者リストを保存するJSONファイル
+
+// スタッフリスト（OneDriveに永続化）
+let staffList = { sales: [], field: [] };
 
 // 業務用アカウントの drive のIDをキャッシュ（起動時に取得）
 let sharedDriveId = null;
@@ -1920,7 +2045,7 @@ async function initialize() {
 // 高速読み込み：工事一覧+書類状況を1〜2回のAPI呼び出しで取得
 async function loadAllDataFast() {
   try {
-    // 1. 工事一覧JSONと、工事書類フォルダ配下の全コンテンツを並列取得
+    // 1. 工事一覧JSON、スタッフリスト、工事書類フォルダ配下の全コンテンツを並列取得
     const [kojiListResult, foldersResult] = await Promise.all([
       // 工事一覧JSONを取得（既存ロジック）
       loadKojiList(),
@@ -1929,7 +2054,11 @@ async function loadAllDataFast() {
         .catch(err => {
           console.warn('集約取得失敗、個別取得にフォールバック', err);
           return null;
-        })
+        }),
+      // スタッフリストも並列取得
+      loadStaffList().catch(err => {
+        console.warn('スタッフリスト取得失敗', err);
+      })
     ]);
     
     // 2. foldersResult から各工事フォルダの中身を取り出して docFiles に反映
@@ -2141,6 +2270,30 @@ async function saveKojiList() {
   const blob = new Blob([JSON.stringify(kojiList, null, 2)], { type: 'application/json' });
   // 業務用ドライブの工事書類フォルダ直下に保存
   await graphApi('PUT', `/drives/${sharedDriveId}/items/${sharedRootFolderId}:/${encodeURIComponent(KOJI_LIST_FILE)}:/content`, blob);
+}
+
+// ============================================================
+// スタッフリストの管理
+// ============================================================
+async function loadStaffList() {
+  try {
+    const result = await graphApi('GET', `/drives/${sharedDriveId}/items/${sharedRootFolderId}:/${encodeURIComponent(STAFF_LIST_FILE)}:/content`, null, true);
+    const text = await result.text();
+    const data = JSON.parse(text);
+    staffList = {
+      sales: Array.isArray(data.sales) ? data.sales : [],
+      field: Array.isArray(data.field) ? data.field : []
+    };
+  } catch (err) {
+    // ファイルが存在しない場合は空リストで初期化
+    console.log('スタッフリストファイルなし、空で初期化');
+    staffList = { sales: [], field: [] };
+  }
+}
+
+async function saveStaffList() {
+  const blob = new Blob([JSON.stringify(staffList, null, 2)], { type: 'application/json' });
+  await graphApi('PUT', `/drives/${sharedDriveId}/items/${sharedRootFolderId}:/${encodeURIComponent(STAFF_LIST_FILE)}:/content`, blob);
 }
 
 // ============================================================
@@ -2892,10 +3045,14 @@ function renderKojiInfo(koji) {
       </div>
       <div class="label">工事番号</div><div><input type="text" class="form-input edit-input" id="edit-number" value="${escapeHtml(koji.number || '')}" style="padding:4px 8px;font-size:13px;"></div>
       <div class="label">発注者</div><div><input type="text" class="form-input edit-input" id="edit-client" value="${escapeHtml(koji.client || '')}" style="padding:4px 8px;font-size:13px;"></div>
-      <div class="label">現場担当</div><div><input type="text" class="form-input edit-input" id="edit-field" value="${escapeHtml(koji.field || '')}" style="padding:4px 8px;font-size:13px;"></div>
-      <div class="label">営業担当</div><div><input type="text" class="form-input edit-input" id="edit-sales" value="${escapeHtml(koji.sales || '')}" style="padding:4px 8px;font-size:13px;"></div>
+      <div class="label">現場担当</div><div><select class="form-input edit-input" id="edit-field" style="padding:4px 8px;font-size:13px;"></select></div>
+      <div class="label">営業担当</div><div><select class="form-input edit-input" id="edit-sales" style="padding:4px 8px;font-size:13px;"></select></div>
       <div class="label">登録日</div><div style="font-size:12px;color:var(--text-secondary);">${koji.createdAt ? new Date(koji.createdAt).toLocaleDateString('ja-JP') : '-'}</div>
     `;
+    // 担当者のselectに選択肢を生成
+    populateStaffSelect('edit-sales', 'sales', koji.sales || '');
+    populateStaffSelect('edit-field', 'field', koji.field || '');
+    
     document.getElementById('edit-koji-btn').textContent = '保存';
     document.getElementById('edit-koji-btn').classList.add('primary-action');
     // 編集中は削除ボタンを非表示
@@ -4032,19 +4189,159 @@ function downloadCurrentPdf() {
 }
 
 // ============================================================
+// スタッフ管理モーダル
+// ============================================================
+function openStaffModal() {
+  renderStaffList();
+  document.getElementById('staff-modal').classList.add('active');
+  setTimeout(() => document.getElementById('staff-sales-input').focus(), 100);
+}
+
+function closeStaffModal() {
+  document.getElementById('staff-modal').classList.remove('active');
+}
+
+function renderStaffList() {
+  // 営業
+  const salesEl = document.getElementById('staff-sales-list');
+  const salesCount = document.getElementById('staff-sales-count');
+  salesCount.textContent = `${staffList.sales.length}人`;
+  salesEl.innerHTML = staffList.sales.map(name => `
+    <div class="staff-chip">
+      <span class="staff-chip-name">${escapeHtml(name)}</span>
+      <button class="staff-chip-remove" onclick="removeStaff('sales', ${escapeAttr(name)})" title="削除">×</button>
+    </div>
+  `).join('');
+  
+  // 現場
+  const fieldEl = document.getElementById('staff-field-list');
+  const fieldCount = document.getElementById('staff-field-count');
+  fieldCount.textContent = `${staffList.field.length}人`;
+  fieldEl.innerHTML = staffList.field.map(name => `
+    <div class="staff-chip">
+      <span class="staff-chip-name">${escapeHtml(name)}</span>
+      <button class="staff-chip-remove" onclick="removeStaff('field', ${escapeAttr(name)})" title="削除">×</button>
+    </div>
+  `).join('');
+}
+
+async function addStaff(type) {
+  const inputId = type === 'sales' ? 'staff-sales-input' : 'staff-field-input';
+  const input = document.getElementById(inputId);
+  const name = input.value.trim();
+  if (!name) {
+    showToast('名前を入力してください', 'error');
+    input.focus();
+    return;
+  }
+  
+  // 重複チェック
+  if (staffList[type].includes(name)) {
+    showToast('既に登録されています', 'error');
+    return;
+  }
+  
+  staffList[type].push(name);
+  
+  try {
+    showToast('保存中...');
+    await saveStaffList();
+    input.value = '';
+    renderStaffList();
+    showToast(`「${name}」を追加しました`);
+  } catch (err) {
+    // ロールバック
+    staffList[type] = staffList[type].filter(n => n !== name);
+    console.error('スタッフ追加エラー:', err);
+    showToast('保存に失敗しました', 'error');
+  }
+}
+
+async function removeStaff(type, name) {
+  const ok = await showConfirm({
+    title: '担当者を削除',
+    message: `「${name}」を${type === 'sales' ? '営業' : '現場'}担当リストから削除します。\n\n※既存の工事に紐づいている担当者情報は変更されません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  const removed = staffList[type].slice();
+  staffList[type] = staffList[type].filter(n => n !== name);
+  
+  try {
+    await saveStaffList();
+    renderStaffList();
+    showToast(`「${name}」を削除しました`);
+  } catch (err) {
+    staffList[type] = removed;
+    console.error('スタッフ削除エラー:', err);
+    showToast('削除に失敗しました', 'error');
+  }
+}
+
+// Enter キーで追加できるように
+document.addEventListener('DOMContentLoaded', () => {
+  const salesInput = document.getElementById('staff-sales-input');
+  const fieldInput = document.getElementById('staff-field-input');
+  if (salesInput) salesInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addStaff('sales'); }
+  });
+  if (fieldInput) fieldInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addStaff('field'); }
+  });
+});
+
+// ============================================================
 // 新規工事登録
 // ============================================================
 function openNewModal() {
   document.getElementById('new-name').value = '';
   document.getElementById('new-number').value = '';
   document.getElementById('new-client').value = '';
-  document.getElementById('new-sales').value = '';
-  document.getElementById('new-field').value = '';
   document.getElementById('new-status').value = '受注';
+  
+  // 担当者プルダウンを生成
+  populateStaffSelect('new-sales', 'sales', '');
+  populateStaffSelect('new-field', 'field', '');
+  
   // 種別はデフォルト「公共」
   document.querySelector('input[name="new-type"][value="公共"]').checked = true;
   document.getElementById('new-modal').classList.add('active');
   setTimeout(() => document.getElementById('new-name').focus(), 100);
+}
+
+// 担当者selectに選択肢を入れる共通関数
+// currentValue: 選択中の値（編集時用）
+function populateStaffSelect(selectId, type, currentValue) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  
+  // option を全クリア
+  sel.innerHTML = '<option value="">-- 選択してください --</option>';
+  
+  const list = staffList[type] || [];
+  
+  // 現在値が登録されてないリスト外の値の場合、それも option として追加
+  const hasCurrent = currentValue && !list.includes(currentValue);
+  
+  for (const name of list) {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === currentValue) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  
+  // 既存工事で登録済みでない名前の場合、それも選択肢として残す
+  if (hasCurrent) {
+    const opt = document.createElement('option');
+    opt.value = currentValue;
+    opt.textContent = currentValue + ' (リスト外)';
+    opt.selected = true;
+    sel.appendChild(opt);
+  }
 }
 
 function closeNewModal() {
