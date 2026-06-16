@@ -872,6 +872,93 @@
     background: var(--danger-bg);
     color: var(--danger-fg);
   }
+  
+  /* 担当者カスタムドロップダウン */
+  .staff-dropdown {
+    position: relative;
+  }
+  .staff-dd-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .staff-dd-display:hover {
+    border-color: var(--primary);
+  }
+  .staff-dd-value {
+    color: var(--text-tertiary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .staff-dd-display.has-value .staff-dd-value {
+    color: var(--text-primary);
+  }
+  .staff-dd-arrow {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    transition: transform 0.15s;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+  .staff-dropdown.open .staff-dd-arrow {
+    transform: rotate(180deg);
+  }
+  .staff-dd-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 100;
+    overflow: hidden;
+  }
+  .staff-dropdown.open .staff-dd-panel {
+    display: block;
+  }
+  .staff-dd-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .staff-dd-list {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .staff-dd-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--bg-secondary);
+  }
+  .staff-dd-item:last-child {
+    border-bottom: none;
+  }
+  .staff-dd-item:hover {
+    background: var(--bg-secondary);
+  }
+  .staff-dd-item.selected {
+    background: #E6F1FB;
+    color: #0C447C;
+    font-weight: 500;
+  }
   .doc-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
   
   .doc-actions {
@@ -1727,15 +1814,13 @@
       <div class="form-grid-2">
         <div>
           <label class="form-label">営業担当<span class="optional-mark">任意</span></label>
-          <select class="form-input" id="new-sales">
-            <option value="">-- 選択してください --</option>
-          </select>
+          <div class="staff-dropdown" id="new-sales-dropdown" data-type="sales" data-target="new-sales"></div>
+          <input type="hidden" id="new-sales" value="">
         </div>
         <div>
           <label class="form-label">現場担当<span class="optional-mark">任意</span></label>
-          <select class="form-input" id="new-field">
-            <option value="">-- 選択してください --</option>
-          </select>
+          <div class="staff-dropdown" id="new-field-dropdown" data-type="field" data-target="new-field"></div>
+          <input type="hidden" id="new-field" value="">
         </div>
       </div>
     </div>
@@ -3064,13 +3149,19 @@ function renderKojiInfo(koji) {
       </div>
       <div class="label">工事番号</div><div><input type="text" class="form-input edit-input" id="edit-number" value="${escapeHtml(koji.number || '')}" style="padding:4px 8px;font-size:13px;"></div>
       <div class="label">発注者</div><div><input type="text" class="form-input edit-input" id="edit-client" value="${escapeHtml(koji.client || '')}" style="padding:4px 8px;font-size:13px;"></div>
-      <div class="label">現場担当</div><div><select class="form-input edit-input" id="edit-field" style="padding:4px 8px;font-size:13px;"></select></div>
-      <div class="label">営業担当</div><div><select class="form-input edit-input" id="edit-sales" style="padding:4px 8px;font-size:13px;"></select></div>
+      <div class="label">現場担当</div><div>
+        <div class="staff-dropdown" id="edit-field-dropdown" data-type="field" data-target="edit-field"></div>
+        <input type="hidden" id="edit-field" value="${escapeHtml(koji.field || '')}">
+      </div>
+      <div class="label">営業担当</div><div>
+        <div class="staff-dropdown" id="edit-sales-dropdown" data-type="sales" data-target="edit-sales"></div>
+        <input type="hidden" id="edit-sales" value="${escapeHtml(koji.sales || '')}">
+      </div>
       <div class="label">登録日</div><div style="font-size:12px;color:var(--text-secondary);">${koji.createdAt ? new Date(koji.createdAt).toLocaleDateString('ja-JP') : '-'}</div>
     `;
-    // 担当者のselectに選択肢を生成
-    populateStaffSelect('edit-sales', 'sales', koji.sales || '');
-    populateStaffSelect('edit-field', 'field', koji.field || '');
+    // 担当者カスタムドロップダウンを初期化
+    initStaffDropdown('edit-sales-dropdown', koji.sales || '');
+    initStaffDropdown('edit-field-dropdown', koji.field || '');
     
     document.getElementById('edit-koji-btn').textContent = '保存';
     document.getElementById('edit-koji-btn').classList.add('primary-action');
@@ -4370,9 +4461,11 @@ function openNewModal() {
   document.getElementById('new-client').value = '';
   document.getElementById('new-status').value = '受注';
   
-  // 担当者プルダウンを生成
-  populateStaffSelect('new-sales', 'sales', '');
-  populateStaffSelect('new-field', 'field', '');
+  // 担当者カスタムドロップダウンを初期化
+  document.getElementById('new-sales').value = '';
+  document.getElementById('new-field').value = '';
+  initStaffDropdown('new-sales-dropdown', '');
+  initStaffDropdown('new-field-dropdown', '');
   
   // 種別はデフォルト「公共」
   document.querySelector('input[name="new-type"][value="公共"]').checked = true;
@@ -4380,37 +4473,121 @@ function openNewModal() {
   setTimeout(() => document.getElementById('new-name').focus(), 100);
 }
 
-// 担当者selectに選択肢を入れる共通関数
-// currentValue: 選択中の値（編集時用）
-function populateStaffSelect(selectId, type, currentValue) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
+// カスタムドロップダウンの初期化
+// containerId: ドロップダウン用のdiv要素のid
+// currentValue: 初期選択値
+function initStaffDropdown(containerId, currentValue) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
   
-  // option を全クリア
-  sel.innerHTML = '<option value="">-- 選択してください --</option>';
-  
+  const type = container.dataset.type; // 'sales' or 'field'
+  const targetId = container.dataset.target; // hidden input id
   const list = staffList[type] || [];
   
-  // 現在値が登録されてないリスト外の値の場合、それも option として追加
-  const hasCurrent = currentValue && !list.includes(currentValue);
+  // 現在値の表示テキスト
+  let displayText = '-- 選択してください --';
+  let hasValue = false;
+  if (currentValue) {
+    displayText = currentValue;
+    if (!list.includes(currentValue)) {
+      displayText += ' (リスト外)';
+    }
+    hasValue = true;
+  }
   
+  // 選択肢HTMLを構築
+  let optionsHtml = '<div class="staff-dd-item" data-value="">-- 選択を解除 --</div>';
   for (const name of list) {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    if (name === currentValue) opt.selected = true;
-    sel.appendChild(opt);
+    const selected = name === currentValue ? 'selected' : '';
+    optionsHtml += `<div class="staff-dd-item ${selected}" data-value="${escapeHtml(name)}">${escapeHtml(name)}</div>`;
+  }
+  // リスト外なら現在値も選択肢に
+  if (currentValue && !list.includes(currentValue)) {
+    optionsHtml += `<div class="staff-dd-item selected" data-value="${escapeHtml(currentValue)}">${escapeHtml(currentValue)} (リスト外)</div>`;
   }
   
-  // 既存工事で登録済みでない名前の場合、それも選択肢として残す
-  if (hasCurrent) {
-    const opt = document.createElement('option');
-    opt.value = currentValue;
-    opt.textContent = currentValue + ' (リスト外)';
-    opt.selected = true;
-    sel.appendChild(opt);
-  }
+  container.innerHTML = `
+    <div class="staff-dd-display${hasValue ? ' has-value' : ''}">
+      <span class="staff-dd-value">${escapeHtml(displayText)}</span>
+      <span class="staff-dd-arrow">▼</span>
+    </div>
+    <div class="staff-dd-panel">
+      <input type="text" class="staff-dd-search" placeholder="🔍 検索...">
+      <div class="staff-dd-list">${optionsHtml}</div>
+    </div>
+  `;
+  
+  // hidden input に現在値をセット
+  const hiddenInput = document.getElementById(targetId);
+  if (hiddenInput) hiddenInput.value = currentValue || '';
+  
+  // イベントバインド
+  const display = container.querySelector('.staff-dd-display');
+  const panel = container.querySelector('.staff-dd-panel');
+  const search = container.querySelector('.staff-dd-search');
+  const items = container.querySelectorAll('.staff-dd-item');
+  
+  display.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // 他を閉じる
+    document.querySelectorAll('.staff-dropdown.open').forEach(d => {
+      if (d !== container) d.classList.remove('open');
+    });
+    container.classList.toggle('open');
+    if (container.classList.contains('open')) {
+      search.value = '';
+      items.forEach(it => it.style.display = '');
+      setTimeout(() => search.focus(), 50);
+    }
+  });
+  
+  search.addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    items.forEach(it => {
+      const name = (it.dataset.value || '').toLowerCase();
+      const text = it.textContent.toLowerCase();
+      if (!it.dataset.value || name.includes(q) || text.includes(q)) {
+        it.style.display = '';
+      } else {
+        it.style.display = 'none';
+      }
+    });
+  });
+  
+  search.addEventListener('click', (e) => e.stopPropagation());
+  
+  items.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const value = item.dataset.value;
+      const text = item.textContent;
+      const valueEl = container.querySelector('.staff-dd-value');
+      const displayEl = container.querySelector('.staff-dd-display');
+      
+      if (value) {
+        valueEl.textContent = text;
+        displayEl.classList.add('has-value');
+      } else {
+        valueEl.textContent = '-- 選択してください --';
+        displayEl.classList.remove('has-value');
+      }
+      
+      // hidden input を更新
+      if (hiddenInput) hiddenInput.value = value;
+      
+      // 選択状態更新
+      items.forEach(it => it.classList.remove('selected'));
+      item.classList.add('selected');
+      
+      container.classList.remove('open');
+    });
+  });
 }
+
+// 外側クリックでドロップダウン閉じる
+document.addEventListener('click', () => {
+  document.querySelectorAll('.staff-dropdown.open').forEach(d => d.classList.remove('open'));
+});
 
 function closeNewModal() {
   document.getElementById('new-modal').classList.remove('active');
