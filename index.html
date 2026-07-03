@@ -1020,13 +1020,22 @@
     font-size: 11px;
     font-weight: 500;
   }
-  .type-pill.type-public {
+  .type-pill.type-public-moto {
     background: #E6F1FB;
     color: #0C447C;
+  }
+  .type-pill.type-public-shita {
+    background: #E1F5EE;
+    color: #0E5C3D;
   }
   .type-pill.type-minkan {
     background: #FAEEDA;
     color: #854F0B;
+  }
+  /* 旧クラス互換 */
+  .type-pill.type-public {
+    background: #E6F1FB;
+    color: #0C447C;
   }
   
   /* === 会社カード === */
@@ -1661,7 +1670,7 @@
     <span>凡例:</span>
     <span><span class="doc-dot has">●</span> あり</span>
     <span><span class="doc-dot missing">●</span> なし</span>
-    <span style="margin-left: auto; opacity: 0.7;">公共:契/予/登 民間:注/請/予/登 + 🏢会社数</span>
+    <span style="margin-left: auto; opacity: 0.7;">公共(元):契/予/登  公共(下)・民間:注/請/見/予/登  + 🏢会社数</span>
   </div>
 
   <!-- 完成工事セクション（折りたたみ） -->
@@ -1778,17 +1787,21 @@
 
       <div class="form-group">
         <label class="form-label">工事種別<span class="required-mark">必須</span></label>
-        <div style="display:flex;gap:12px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <label class="type-radio">
-            <input type="radio" name="new-type" value="公共" checked>
-            <span>公共</span>
+            <input type="radio" name="new-type" value="公共（元）" checked>
+            <span>公共（元）</span>
+          </label>
+          <label class="type-radio">
+            <input type="radio" name="new-type" value="公共（下）">
+            <span>公共（下）</span>
           </label>
           <label class="type-radio">
             <input type="radio" name="new-type" value="民間">
             <span>民間</span>
           </label>
         </div>
-        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">※種別によって必要な書類が変わります</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">※種別によって必要な書類が変わります（公共（元）=元請け、公共（下）=下請け）</div>
       </div>
 
       <div class="form-grid-2">
@@ -1983,37 +1996,78 @@ if (window.pdfjsLib) {
 // グローバル状態
 // ============================================================
 // 種別ごとの共通書類
-const DOC_TYPES_PUBLIC = [
+// 公共（元）：元請け - 契約書1本
+const DOC_TYPES_PUBLIC_MOTO = [
   { key: 'keiyaku',  label: '契約書',       short: '契', filePrefix: '契約書' },
   { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
   { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
 ];
 
-const DOC_TYPES_MINKAN = [
+// 公共（下）：下請け - 注文書＋請書＋見積書
+const DOC_TYPES_PUBLIC_SHITA = [
   { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書' },
   { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書' },
+  { key: 'mitsumori',label: '見積書',       short: '見', filePrefix: '見積書' },
   { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
   { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
 ];
 
-// 会社ごとの書類タイプ（公共・民間共通）
-const COMPANY_DOC_TYPES = [
-  { key: 'chumon',   label: '注文書',  filePrefix: '注文書' },
-  { key: 'uke',      label: '請書',    filePrefix: '請書' }
+// 民間：注文書＋請書＋見積書
+const DOC_TYPES_MINKAN = [
+  { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書' },
+  { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書' },
+  { key: 'mitsumori',label: '見積書',       short: '見', filePrefix: '見積書' },
+  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
+  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
 ];
+
+// 会社ごとの書類タイプ（4種、全種別共通）
+// 変更分は「注文書・請書」のみ有効
+const COMPANY_DOC_TYPES = [
+  { key: 'chumon',    label: '注文書',   filePrefix: '注文書',   hasChanges: true  },
+  { key: 'uke',       label: '請書',     filePrefix: '請書',     hasChanges: true  },
+  { key: 'mitsumori', label: '見積書',   filePrefix: '見積書',   hasChanges: false },
+  { key: 'seiyaku',   label: '誓約書',   filePrefix: '誓約書',   hasChanges: false }
+];
+
+// 会社書類のうち、変更分に対応するもの
+const COMPANY_DOC_TYPES_CHANGE = COMPANY_DOC_TYPES.filter(d => d.hasChanges);
+
+// 種別からCSS classと表示ラベルを取得
+function getTypeDisplay(type) {
+  const t = normalizeKojiType(type);
+  if (t === '民間') return { className: 'type-minkan', label: '民間' };
+  if (t === '公共（下）') return { className: 'type-public-shita', label: '公共（下）' };
+  return { className: 'type-public-moto', label: '公共（元）' };
+}
+
+// 工事の type を正規化（既存の「公共」→「公共（元）」に自動変換）
+function normalizeKojiType(type) {
+  if (type === '公共') return '公共（元）';  // 旧データ互換
+  if (type === '公共（元）' || type === '公共（下）' || type === '民間') return type;
+  return '公共（元）';  // デフォルト
+}
 
 // 工事種別に応じた共通書類タイプを返す
 function getDocTypes(koji) {
-  if (!koji) return DOC_TYPES_PUBLIC;
-  return koji.type === '民間' ? DOC_TYPES_MINKAN : DOC_TYPES_PUBLIC;
+  if (!koji) return DOC_TYPES_PUBLIC_MOTO;
+  const t = normalizeKojiType(koji.type);
+  if (t === '民間') return DOC_TYPES_MINKAN;
+  if (t === '公共（下）') return DOC_TYPES_PUBLIC_SHITA;
+  return DOC_TYPES_PUBLIC_MOTO;
 }
 
-// 互換性のため：旧コードが参照する DOC_TYPES（デフォルトは公共向け）
-const DOC_TYPES = DOC_TYPES_PUBLIC;
+// 互換性のため：旧コードが参照する DOC_TYPES（デフォルトは公共（元）向け）
+const DOC_TYPES = DOC_TYPES_PUBLIC_MOTO;
 
 // ファイル名から書類タイプを判定（共通書類のみ、会社書類は別関数）
 function matchCommonDocType(fileName, kojiType) {
-  const types = kojiType === '民間' ? DOC_TYPES_MINKAN : DOC_TYPES_PUBLIC;
+  const t = normalizeKojiType(kojiType);
+  let types;
+  if (t === '民間') types = DOC_TYPES_MINKAN;
+  else if (t === '公共（下）') types = DOC_TYPES_PUBLIC_SHITA;
+  else types = DOC_TYPES_PUBLIC_MOTO;
+  
   for (const docType of types) {
     if (fileName.startsWith(docType.filePrefix + '_')) {
       return docType;
@@ -2033,15 +2087,19 @@ function parseCompanyDocFileName(fileName, companies) {
     const prefix = company.name + '_';
     if (!fileName.startsWith(prefix)) continue;
     const rest = fileName.substring(prefix.length);
-    // 注文書/請書 をチェック
+    // 4種の会社書類をチェック
     for (const docType of COMPANY_DOC_TYPES) {
       const docPrefix = docType.filePrefix + '_';
       if (rest.startsWith(docPrefix)) {
         const afterDoc = rest.substring(docPrefix.length);
-        // 変更N_ で始まるかチェック
-        const changeMatch = afterDoc.match(/^変更(\d+)_/);
-        const changeNum = changeMatch ? parseInt(changeMatch[1]) : 0;
-        return { companyName: company.name, docKey: docType.key, changeNum };
+        // 変更N_ で始まるかチェック（変更対応の書類のみ）
+        if (docType.hasChanges) {
+          const changeMatch = afterDoc.match(/^変更(\d+)_/);
+          const changeNum = changeMatch ? parseInt(changeMatch[1]) : 0;
+          return { companyName: company.name, docKey: docType.key, changeNum };
+        } else {
+          return { companyName: company.name, docKey: docType.key, changeNum: 0 };
+        }
       }
     }
   }
@@ -2344,7 +2402,7 @@ async function loadKojiList() {
       {
         id: 'koji_' + Date.now() + '_1',
         name: '○○橋梁補修工事',
-        type: '公共',
+        type: '公共（元）',
         number: 'K-2026-014',
         status: '完工',
         client: '国土交通省',
@@ -2536,16 +2594,30 @@ function getCompanyDocStatus(koji, companyName, docKey, changeNum = 0) {
   return docFiles[fileKey] ? 'has' : 'missing';
 }
 
-// 会社1社が「揃ってる」か判定（メインの注文書・請書）
+// 会社1社の「メイン書類」（変更ではなく最初の分）が全部揃ってるか判定
+// 4種：注文書・請書・見積書・誓約書 すべて必須
 function isCompanyDocsComplete(koji, companyName) {
-  return getCompanyDocStatus(koji, companyName, 'chumon', 0) === 'has' &&
-         getCompanyDocStatus(koji, companyName, 'uke', 0) === 'has';
+  for (const dt of COMPANY_DOC_TYPES) {
+    if (getCompanyDocStatus(koji, companyName, dt.key, 0) !== 'has') return false;
+  }
+  return true;
 }
 
-// 会社の変更分N回目が揃ってるか
+// 会社の変更分N回目が揃ってるか（変更対応の書類=注文書・請書のみ）
 function isCompanyChangeComplete(koji, companyName, changeNum) {
-  return getCompanyDocStatus(koji, companyName, 'chumon', changeNum) === 'has' &&
-         getCompanyDocStatus(koji, companyName, 'uke', changeNum) === 'has';
+  for (const dt of COMPANY_DOC_TYPES_CHANGE) {
+    if (getCompanyDocStatus(koji, companyName, dt.key, changeNum) !== 'has') return false;
+  }
+  return true;
+}
+
+// 会社1社の不足書類数を数える（メイン分）
+function countCompanyMissingDocs(koji, companyName) {
+  let missing = 0;
+  for (const dt of COMPANY_DOC_TYPES) {
+    if (getCompanyDocStatus(koji, companyName, dt.key, 0) !== 'has') missing++;
+  }
+  return missing;
 }
 
 // 工事全体で不足してる書類数を数える
@@ -2555,10 +2627,10 @@ function countMissingDocs(koji) {
   for (const dt of getDocTypes(koji)) {
     if (getDocStatus(koji, dt.key) === 'missing') missing++;
   }
-  // 会社書類（メインの注文書・請書）
+  // 会社書類（メイン4種の不足合計）
   if (koji.companies) {
     for (const company of koji.companies) {
-      if (!isCompanyDocsComplete(koji, company.name)) missing++;
+      missing += countCompanyMissingDocs(koji, company.name);
     }
   }
   return missing;
@@ -2569,15 +2641,17 @@ function isAllDocsComplete(koji) {
   return countMissingDocs(koji) === 0;
 }
 
-// 工事全体の書類完了率を計算（共通書類+会社書類）
+// 工事全体の書類完了率を計算（共通書類+会社書類のメイン4種）
 function calcCompletionRate(koji) {
-  let total = getDocTypes(koji).length;
-  let done = getDocTypes(koji).filter(dt => getDocStatus(koji, dt.key) === 'has').length;
+  const docTypes = getDocTypes(koji);
+  let total = docTypes.length;
+  let done = docTypes.filter(dt => getDocStatus(koji, dt.key) === 'has').length;
   if (koji.companies) {
     for (const company of koji.companies) {
-      total += 2; // 注文書・請書
-      if (getCompanyDocStatus(koji, company.name, 'chumon', 0) === 'has') done++;
-      if (getCompanyDocStatus(koji, company.name, 'uke', 0) === 'has') done++;
+      total += COMPANY_DOC_TYPES.length; // 4種
+      for (const dt of COMPANY_DOC_TYPES) {
+        if (getCompanyDocStatus(koji, company.name, dt.key, 0) === 'has') done++;
+      }
     }
   }
   return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 100 };
@@ -2710,7 +2784,7 @@ function renderCompletionBars() {
   
   // 全書類種別（公共・民間どちらでも出てくるもの全部）
   // 工事ごとに該当する書類のみ計算
-  const allDocLabels = ['契約書', '注文書', '請書', '実行予算', '工事登録用紙'];
+  const allDocLabels = ['契約書', '注文書', '請書', '見積書', '実行予算', '工事登録用紙'];
   const stats = {};
   for (const label of allDocLabels) {
     stats[label] = { has: 0, total: 0 };
@@ -2814,7 +2888,7 @@ function buildKojiRow(k) {
   const missingCount = countMissingDocs(k);
   const hasMissing = missingCount > 0;
   const statusClass = k.status === '受注' ? 's-uketu' : k.status === '施工中' ? 's-shiko' : 's-kanko';
-  const typeClass = k.type === '民間' ? 'type-minkan' : 'type-public';
+  const typeInfo = getTypeDisplay(k.type);
   
   // 共通書類のドット
   const dotsHtml = getDocTypes(k).map(d => {
@@ -2841,7 +2915,7 @@ function buildKojiRow(k) {
     <tr class="koji-row ${hasMissing && k.status !== '完工' ? 'alert' : ''}" onclick="openDetailModal('${k.id}')">
       <td style="font-weight:${hasMissing && k.status !== '完工' ? '500' : '400'};">${escapeHtml(k.name)}</td>
       <td class="hide-mobile"><span class="koji-num">${escapeHtml(k.number || '-')}</span></td>
-      <td><span class="type-pill ${typeClass}">${escapeHtml(k.type || '公共')}</span></td>
+      <td><span class="type-pill ${typeInfo.className}">${escapeHtml(typeInfo.label)}</span></td>
       <td><span class="s-pill ${statusClass}">${escapeHtml(k.status || '')}</span></td>
       <td><div class="doc-dots">${dotsHtml}${companySummary}</div></td>
       <td class="hide-mobile" style="color:var(--text-secondary);font-size:12px;">${escapeHtml(k.field || '-')}</td>
@@ -2874,10 +2948,10 @@ function openDetailModal(id) {
   
   const missingCount = countMissingDocs(koji);
   const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
-  const typeClass = koji.type === '民間' ? 'type-minkan' : 'type-public';
+  const typeInfo = getTypeDisplay(koji.type);
   document.getElementById('detail-tags').innerHTML = `
     <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
-    <span class="type-pill ${typeClass}">${escapeHtml(koji.type || '公共')}</span>
+    <span class="type-pill ${typeInfo.className}">${escapeHtml(typeInfo.label)}</span>
     <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
     ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
   `;
@@ -3030,12 +3104,12 @@ function buildCompanyCard(koji, company) {
   const complete = isCompanyDocsComplete(koji, company.name);
   const changes = company.changes || 0;
   
-  // メインの注文書・請書
+  // メインの4種書類（注文書・請書・見積書・誓約書）
   const mainRows = COMPANY_DOC_TYPES.map(dt => {
     return buildCompanyDocRow(koji, company.name, dt, 0);
   }).join('');
   
-  // 変更分のリスト
+  // 変更分のリスト（注文書・請書だけ）
   let changeRows = '';
   for (let i = 1; i <= changes; i++) {
     const changeComplete = isCompanyChangeComplete(koji, company.name, i);
@@ -3046,7 +3120,7 @@ function buildCompanyCard(koji, company) {
           ${changeComplete ? '<span class="change-status done">✓ 揃っています</span>' : '<span class="change-status pending">不足あり</span>'}
           <button class="change-delete-btn" onclick="deleteCompanyChange('${koji.id}', ${escapeAttr(company.name)}, ${i})" title="この変更を削除">×</button>
         </div>
-        ${COMPANY_DOC_TYPES.map(dt => buildCompanyDocRow(koji, company.name, dt, i)).join('')}
+        ${COMPANY_DOC_TYPES_CHANGE.map(dt => buildCompanyDocRow(koji, company.name, dt, i)).join('')}
       </div>
     `;
   }
@@ -3063,7 +3137,7 @@ function buildCompanyCard(koji, company) {
         ${mainRows}
         ${changeRows}
         <button class="add-change-btn" onclick="addCompanyChange('${koji.id}', ${escapeAttr(company.name)})">
-          ＋ 変更分を追加
+          ＋ 変更分を追加（注文書・請書のみ）
         </button>
       </div>
     </div>
@@ -3140,12 +3214,13 @@ let isEditingKoji = false;
 function renderKojiInfo(koji) {
   if (isEditingKoji) {
     // 編集モード
-    const currentType = koji.type || '公共';
+    const currentType = normalizeKojiType(koji.type);
     document.getElementById('detail-info').innerHTML = `
       <div class="label">工事名</div><div><input type="text" class="form-input edit-input" id="edit-name" value="${escapeHtml(koji.name || '')}" style="padding:4px 8px;font-size:13px;"></div>
-      <div class="label">種別</div><div>
-        <label class="type-radio" style="padding:3px 10px;font-size:12px;"><input type="radio" name="edit-type" value="公共" ${currentType === '公共' ? 'checked' : ''}><span>公共</span></label>
-        <label class="type-radio" style="padding:3px 10px;font-size:12px;margin-left:6px;"><input type="radio" name="edit-type" value="民間" ${currentType === '民間' ? 'checked' : ''}><span>民間</span></label>
+      <div class="label">種別</div><div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <label class="type-radio" style="padding:3px 8px;font-size:11px;"><input type="radio" name="edit-type" value="公共（元）" ${currentType === '公共（元）' ? 'checked' : ''}><span>公共（元）</span></label>
+        <label class="type-radio" style="padding:3px 8px;font-size:11px;"><input type="radio" name="edit-type" value="公共（下）" ${currentType === '公共（下）' ? 'checked' : ''}><span>公共（下）</span></label>
+        <label class="type-radio" style="padding:3px 8px;font-size:11px;"><input type="radio" name="edit-type" value="民間" ${currentType === '民間' ? 'checked' : ''}><span>民間</span></label>
       </div>
       <div class="label">工事番号</div><div><input type="text" class="form-input edit-input" id="edit-number" value="${escapeHtml(koji.number || '')}" style="padding:4px 8px;font-size:13px;"></div>
       <div class="label">発注者</div><div><input type="text" class="form-input edit-input" id="edit-client" value="${escapeHtml(koji.client || '')}" style="padding:4px 8px;font-size:13px;"></div>
@@ -3221,7 +3296,7 @@ async function toggleEditKoji() {
     const typeEl = document.querySelector('input[name="edit-type"]:checked');
     const newData = {
       name: newName,
-      type: typeEl ? typeEl.value : (koji.type || '公共'),
+      type: typeEl ? typeEl.value : normalizeKojiType(koji.type),
       number: document.getElementById('edit-number').value.trim(),
       client: document.getElementById('edit-client').value.trim(),
       field: document.getElementById('edit-field').value.trim(),
@@ -3570,10 +3645,10 @@ function refreshDetailView(koji) {
   
   const missingCount = countMissingDocs(koji);
   const statusClass = koji.status === '受注' ? 's-uketu' : koji.status === '施工中' ? 's-shiko' : 's-kanko';
-  const typeClass = koji.type === '民間' ? 'type-minkan' : 'type-public';
+  const typeInfo = getTypeDisplay(koji.type);
   document.getElementById('detail-tags').innerHTML = `
     <span class="koji-num">${escapeHtml(koji.number || '-')}</span>
-    <span class="type-pill ${typeClass}">${escapeHtml(koji.type || '公共')}</span>
+    <span class="type-pill ${typeInfo.className}">${escapeHtml(typeInfo.label)}</span>
     <span class="s-pill ${statusClass}">${escapeHtml(koji.status || '')}</span>
     ${missingCount > 0 ? `<span class="alert-pill">⚠ 書類${missingCount}件不足</span>` : ''}
   `;
@@ -3995,7 +4070,7 @@ async function deleteCompanyChange(kojiId, companyName, changeNum) {
   
   // この変更分のファイル数を数える
   let fileCount = 0;
-  for (const dt of COMPANY_DOC_TYPES) {
+  for (const dt of COMPANY_DOC_TYPES_CHANGE) {
     const fileKey = `${kojiId}-company-${companyName}-${dt.key}-${changeNum}`;
     if (docFiles[fileKey]) fileCount++;
   }
@@ -4014,8 +4089,8 @@ async function deleteCompanyChange(kojiId, companyName, changeNum) {
   try {
     showToast('削除中...');
     
-    // 関連ファイルを削除
-    for (const dt of COMPANY_DOC_TYPES) {
+    // 関連ファイルを削除（変更対応の書類のみ = 注文書・請書）
+    for (const dt of COMPANY_DOC_TYPES_CHANGE) {
       const fileKey = `${kojiId}-company-${companyName}-${dt.key}-${changeNum}`;
       if (docFiles[fileKey]) {
         try {
@@ -4467,8 +4542,8 @@ function openNewModal() {
   initStaffDropdown('new-sales-dropdown', '');
   initStaffDropdown('new-field-dropdown', '');
   
-  // 種別はデフォルト「公共」
-  document.querySelector('input[name="new-type"][value="公共"]').checked = true;
+  // 種別はデフォルト「公共（元）」
+  document.querySelector('input[name="new-type"][value="公共（元）"]').checked = true;
   document.getElementById('new-modal').classList.add('active');
   setTimeout(() => document.getElementById('new-name').focus(), 100);
 }
@@ -4602,7 +4677,7 @@ async function saveNewKoji() {
   }
   
   const typeEl = document.querySelector('input[name="new-type"]:checked');
-  const type = typeEl ? typeEl.value : '公共';
+  const type = typeEl ? typeEl.value : '公共（元）';
   
   const saveBtn = document.getElementById('save-new-btn');
   saveBtn.disabled = true;
