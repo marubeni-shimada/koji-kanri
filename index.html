@@ -2022,11 +2022,11 @@ const DOC_TYPES_MINKAN = [
 ];
 
 // 会社ごとの書類タイプ（4種、全種別共通）
-// 変更分は「注文書・請書」のみ有効
+// 変更分は「注文書・請書・見積書」で有効、誓約書のみ変更なし
 const COMPANY_DOC_TYPES = [
   { key: 'chumon',    label: '注文書',   filePrefix: '注文書',   hasChanges: true  },
   { key: 'uke',       label: '請書',     filePrefix: '請書',     hasChanges: true  },
-  { key: 'mitsumori', label: '見積書',   filePrefix: '見積書',   hasChanges: false },
+  { key: 'mitsumori', label: '見積書',   filePrefix: '見積書',   hasChanges: true  },
   { key: 'seiyaku',   label: '誓約書',   filePrefix: '誓約書',   hasChanges: false }
 ];
 
@@ -3137,7 +3137,7 @@ function buildCompanyCard(koji, company) {
         ${mainRows}
         ${changeRows}
         <button class="add-change-btn" onclick="addCompanyChange('${koji.id}', ${escapeAttr(company.name)})">
-          ＋ 変更分を追加（注文書・請書のみ）
+          ＋ 変更分を追加（注文書・請書・見積書）
         </button>
       </div>
     </div>
