@@ -1518,8 +1518,7 @@
   .pdf-viewer-area canvas {
     background: white;
     box-shadow: var(--shadow-lg);
-    max-width: 100%;
-    height: auto;
+    display: inline-block;
   }
   .pdf-loading {
     display: none;
@@ -4409,18 +4408,24 @@ async function renderPdfPage(num) {
     const maxWidth = viewerArea.clientWidth - 40;
     // 回転を考慮した基本サイズ計算
     const baseViewport = page.getViewport({ scale: 1, rotation: pdfRotation });
-    // 幅にフィットするベースの scale
-    const fitScale = Math.min(2, maxWidth / baseViewport.width);
-    // ユーザーのズーム倍率を掛ける
-    const scale = fitScale * pdfZoom;
+    // 100%表示 = 幅にフィットさせる
+    const fitScale = maxWidth / baseViewport.width;
+    // 見た目のスケール
+    const displayScale = fitScale * pdfZoom;
+    // レンダリングは2倍解像度で綺麗に
+    const renderScale = displayScale * 2;
     
-    const viewport = page.getViewport({ scale, rotation: pdfRotation });
+    const renderViewport = page.getViewport({ scale: renderScale, rotation: pdfRotation });
+    const displayViewport = page.getViewport({ scale: displayScale, rotation: pdfRotation });
     const canvas = document.getElementById('pdf-canvas');
     const ctx = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    canvas.height = renderViewport.height;
+    canvas.width = renderViewport.width;
+    // CSS の px サイズは見た目のサイズに（レンダリングは高解像度）
+    canvas.style.width = displayViewport.width + 'px';
+    canvas.style.height = displayViewport.height + 'px';
     
-    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
     document.getElementById('pdf-page-info').textContent = `ページ ${num} / ${pdfDoc.numPages}`;
     
     pdfPageRendering = false;
