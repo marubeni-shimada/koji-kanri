@@ -1506,7 +1506,20 @@
     white-space: nowrap;
     max-width: 60%;
   }
-  .pdf-actions { display: flex; gap: 6px; align-items: center; }
+  .pdf-actions { 
+    display: flex; 
+    gap: 20px; 
+    align-items: center; 
+    flex: 1;
+    justify-content: space-between;
+    margin-left: 20px;
+  }
+  .pdf-actions-left,
+  .pdf-actions-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
   .pdf-viewer-area {
     flex: 1;
     overflow: auto;
@@ -1880,14 +1893,18 @@
     <div class="pdf-header">
       <div class="pdf-title" id="pdf-title">プレビュー</div>
       <div class="pdf-actions">
-        <button class="btn-ghost" onclick="zoomPdf(-0.2)" title="縮小">－</button>
-        <span id="pdf-zoom-info" class="pdf-zoom-info">100%</span>
-        <button class="btn-ghost" onclick="zoomPdf(0.2)" title="拡大">＋</button>
-        <button class="btn-ghost" onclick="resetZoom()" title="ズームをリセット">⤴ リセット</button>
-        <button class="btn-ghost" onclick="rotatePdf(-90)" title="左に90°回転">↺</button>
-        <button class="btn-ghost" onclick="rotatePdf(90)" title="右に90°回転">↻</button>
-        <button class="btn-ghost" onclick="downloadCurrentPdf()">↓ ダウンロード</button>
-        <button class="modal-close" onclick="closePdfModal()">×</button>
+        <div class="pdf-actions-left">
+          <button class="btn-ghost" onclick="zoomPdf(-0.2)" title="縮小">－</button>
+          <span id="pdf-zoom-info" class="pdf-zoom-info">100%</span>
+          <button class="btn-ghost" onclick="zoomPdf(0.2)" title="拡大">＋</button>
+          <button class="btn-ghost" onclick="resetZoom()" title="ズームをリセット">⤴ リセット</button>
+        </div>
+        <div class="pdf-actions-right">
+          <button class="btn-ghost" onclick="rotatePdf(-90)" title="左に90°回転">↺</button>
+          <button class="btn-ghost" onclick="rotatePdf(90)" title="右に90°回転">↻</button>
+          <button class="btn-ghost" onclick="downloadCurrentPdf()">↓ ダウンロード</button>
+          <button class="modal-close" onclick="closePdfModal()">×</button>
+        </div>
       </div>
     </div>
     <div class="pdf-viewer-area" id="pdf-viewer-area">
