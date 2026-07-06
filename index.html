@@ -1542,6 +1542,16 @@
   @keyframes pdf-spin {
     to { transform: rotate(360deg); }
   }
+  .pdf-zoom-info {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 44px;
+    justify-content: center;
+  }
   .pdf-controls {
     padding: 10px 20px;
     border-top: 1px solid var(--border);
@@ -1871,6 +1881,10 @@
     <div class="pdf-header">
       <div class="pdf-title" id="pdf-title">プレビュー</div>
       <div class="pdf-actions">
+        <button class="btn-ghost" onclick="zoomPdf(-0.2)" title="縮小">－</button>
+        <span id="pdf-zoom-info" class="pdf-zoom-info">100%</span>
+        <button class="btn-ghost" onclick="zoomPdf(0.2)" title="拡大">＋</button>
+        <button class="btn-ghost" onclick="resetZoom()" title="ズームをリセット">⤴ リセット</button>
         <button class="btn-ghost" onclick="rotatePdf(-90)" title="左に90°回転">↺</button>
         <button class="btn-ghost" onclick="rotatePdf(90)" title="右に90°回転">↻</button>
         <button class="btn-ghost" onclick="downloadCurrentPdf()">↓ ダウンロード</button>
@@ -2151,6 +2165,7 @@ let pdfPageNum = 1;
 let pdfPageRendering = false;
 let pdfPageNumPending = null;
 let pdfRotation = 0;  // 表示回転（度）
+let pdfZoom = 1.0;    // ユーザー指定のズーム倍率（1.0 = 100%）
 let currentPdfBlob = null;
 let currentPdfName = '';
 
@@ -4323,8 +4338,10 @@ async function openPdfPreviewGeneric(fileKey) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // 回転をリセット
+  // 回転とズームをリセット
   pdfRotation = 0;
+  pdfZoom = 1.0;
+  updateZoomInfo();
   
   document.getElementById('pdf-modal').classList.add('active');
   currentPdfName = file.fileName;
@@ -4359,6 +4376,29 @@ function rotatePdf(delta) {
   renderPdfPage(pdfPageNum);
 }
 
+// PDFのズーム（delta: +0.2 で拡大、-0.2 で縮小）
+function zoomPdf(delta) {
+  if (!pdfDoc) return;
+  const newZoom = pdfZoom + delta;
+  // 0.4〜3.0 の範囲に制限
+  if (newZoom < 0.4 || newZoom > 3.0) return;
+  pdfZoom = Math.round(newZoom * 10) / 10; // 小数点1桁に丸め
+  updateZoomInfo();
+  renderPdfPage(pdfPageNum);
+}
+
+function resetZoom() {
+  if (!pdfDoc) return;
+  pdfZoom = 1.0;
+  updateZoomInfo();
+  renderPdfPage(pdfPageNum);
+}
+
+function updateZoomInfo() {
+  const el = document.getElementById('pdf-zoom-info');
+  if (el) el.textContent = Math.round(pdfZoom * 100) + '%';
+}
+
 async function renderPdfPage(num) {
   if (!pdfDoc) return;
   pdfPageRendering = true;
@@ -4369,7 +4409,10 @@ async function renderPdfPage(num) {
     const maxWidth = viewerArea.clientWidth - 40;
     // 回転を考慮した基本サイズ計算
     const baseViewport = page.getViewport({ scale: 1, rotation: pdfRotation });
-    const scale = Math.min(2, maxWidth / baseViewport.width);
+    // 幅にフィットするベースの scale
+    const fitScale = Math.min(2, maxWidth / baseViewport.width);
+    // ユーザーのズーム倍率を掛ける
+    const scale = fitScale * pdfZoom;
     
     const viewport = page.getViewport({ scale, rotation: pdfRotation });
     const canvas = document.getElementById('pdf-canvas');
