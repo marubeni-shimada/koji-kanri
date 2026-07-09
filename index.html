@@ -3144,10 +3144,13 @@ function renderDocList(koji) {
   const docTypes = getDocTypes(koji);
   const commonChangeTypes = getCommonDocTypesChange(koji);
   
-  // 共通書類（メイン）のHTML
-  const commonMainHtml = docTypes.map(d => {
-    return buildCommonDocRow(koji, d, 0);
-  }).join('');
+  // 変更対応の書類（メイン）
+  const changeableMainHtml = docTypes.filter(d => d.hasChanges)
+    .map(d => buildCommonDocRow(koji, d, 0)).join('');
+  
+  // 変更対応外の書類（メイン）
+  const nonChangeableMainHtml = docTypes.filter(d => !d.hasChanges)
+    .map(d => buildCommonDocRow(koji, d, 0)).join('');
   
   // 共通書類の変更分
   const commonChanges = koji.commonChanges || 0;
@@ -3191,9 +3194,10 @@ function renderDocList(koji) {
   `;
   
   document.getElementById('doc-list').innerHTML = `
-    ${commonMainHtml}
+    ${changeableMainHtml}
     ${commonChangeHtml}
     ${addChangeBtn}
+    ${nonChangeableMainHtml}
     <div class="company-section-divider">
       <div class="company-section-title">━━ 会社ごとの書類 ━━</div>
     </div>
