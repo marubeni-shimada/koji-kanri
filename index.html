@@ -1119,6 +1119,13 @@
     border-left: 3px solid var(--border-strong);
     border-radius: 4px;
   }
+  /* 共通書類の変更セクションは会社カード内じゃないので、左マージンなし */
+  .common-change-section {
+    margin: 8px 0;
+    padding: 8px 10px 4px;
+    background: #F0F6FB;
+    border-left: 3px solid var(--primary);
+  }
   .change-header {
     display: flex;
     align-items: center;
@@ -2061,27 +2068,27 @@ if (window.pdfjsLib) {
 // 種別ごとの共通書類
 // 公共（元）：元請け - 契約書1本
 const DOC_TYPES_PUBLIC_MOTO = [
-  { key: 'keiyaku',  label: '契約書',       short: '契', filePrefix: '契約書' },
-  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
-  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
+  { key: 'keiyaku',  label: '契約書',       short: '契', filePrefix: '契約書',       hasChanges: true  },
+  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算',     hasChanges: false },
+  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙', hasChanges: false }
 ];
 
 // 公共（下）：下請け - 注文書＋請書＋見積書
 const DOC_TYPES_PUBLIC_SHITA = [
-  { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書' },
-  { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書' },
-  { key: 'mitsumori',label: '見積書',       short: '見', filePrefix: '見積書' },
-  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
-  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
+  { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書',       hasChanges: true  },
+  { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書',         hasChanges: true  },
+  { key: 'mitsumori',label: '見積書',       short: '見', filePrefix: '見積書',       hasChanges: true  },
+  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算',     hasChanges: false },
+  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙', hasChanges: false }
 ];
 
 // 民間：注文書＋請書＋見積書
 const DOC_TYPES_MINKAN = [
-  { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書' },
-  { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書' },
-  { key: 'mitsumori',label: '見積書',       short: '見', filePrefix: '見積書' },
-  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算' },
-  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙' }
+  { key: 'chumon',   label: '注文書',       short: '注', filePrefix: '注文書',       hasChanges: true  },
+  { key: 'uke',      label: '請書',         short: '請', filePrefix: '請書',         hasChanges: true  },
+  { key: 'mitsumori',label: '見積書',       short: '見', filePrefix: '見積書',       hasChanges: true  },
+  { key: 'yosan',    label: '実行予算',     short: '予', filePrefix: '実行予算',     hasChanges: false },
+  { key: 'toroku',   label: '工事登録用紙', short: '登', filePrefix: '工事登録用紙', hasChanges: false }
 ];
 
 // 会社ごとの書類タイプ（4種、全種別共通）
@@ -2095,6 +2102,11 @@ const COMPANY_DOC_TYPES = [
 
 // 会社書類のうち、変更分に対応するもの
 const COMPANY_DOC_TYPES_CHANGE = COMPANY_DOC_TYPES.filter(d => d.hasChanges);
+
+// 種別ごとの「変更対応」共通書類を取得
+function getCommonDocTypesChange(koji) {
+  return getDocTypes(koji).filter(d => d.hasChanges);
+}
 
 // 種別からCSS classと表示ラベルを取得
 function getTypeDisplay(type) {
@@ -2123,7 +2135,10 @@ function getDocTypes(koji) {
 // 互換性のため：旧コードが参照する DOC_TYPES（デフォルトは公共（元）向け）
 const DOC_TYPES = DOC_TYPES_PUBLIC_MOTO;
 
-// ファイル名から書類タイプを判定（共通書類のみ、会社書類は別関数）
+// ファイル名から書類タイプと変更番号を判定（共通書類）
+// 例：「契約書_工事名_20260608.pdf」→ { docType, changeNum: 0 }
+// 例：「契約書_変更1_工事名_20260710.pdf」→ { docType, changeNum: 1 }
+// 戻り値：{ docType, changeNum } または null
 function matchCommonDocType(fileName, kojiType) {
   const t = normalizeKojiType(kojiType);
   let types;
@@ -2132,8 +2147,16 @@ function matchCommonDocType(fileName, kojiType) {
   else types = DOC_TYPES_PUBLIC_MOTO;
   
   for (const docType of types) {
-    if (fileName.startsWith(docType.filePrefix + '_')) {
-      return docType;
+    const prefix = docType.filePrefix + '_';
+    if (!fileName.startsWith(prefix)) continue;
+    const rest = fileName.substring(prefix.length);
+    // 変更対応の書類は「変更N_」チェック
+    if (docType.hasChanges) {
+      const changeMatch = rest.match(/^変更(\d+)_/);
+      const changeNum = changeMatch ? parseInt(changeMatch[1]) : 0;
+      return { docType, changeNum };
+    } else {
+      return { docType, changeNum: 0 };
     }
   }
   return null;
@@ -2322,9 +2345,12 @@ async function loadAllDataFast() {
                 continue;
               }
               // 共通書類として判定
-              const docType = matchCommonDocType(file.name, koji.type);
-              if (docType) {
-                const fileKey = `${koji.id}-common-${docType.key}`;
+              const commonResult = matchCommonDocType(file.name, koji.type);
+              if (commonResult) {
+                const { docType, changeNum } = commonResult;
+                const fileKey = changeNum > 0 
+                  ? `${koji.id}-common-${docType.key}-${changeNum}` 
+                  : `${koji.id}-common-${docType.key}`;
                 docFiles[fileKey] = {
                   fileId: file.id,
                   fileName: file.name,
@@ -2628,9 +2654,12 @@ async function loadKojiDocStatus(koji) {
         continue;
       }
       // 共通書類として判定
-      const docType = matchCommonDocType(file.name, koji.type);
-      if (docType) {
-        const fileKey = `${koji.id}-common-${docType.key}`;
+      const commonResult = matchCommonDocType(file.name, koji.type);
+      if (commonResult) {
+        const { docType, changeNum } = commonResult;
+        const fileKey = changeNum > 0 
+          ? `${koji.id}-common-${docType.key}-${changeNum}` 
+          : `${koji.id}-common-${docType.key}`;
         docFiles[fileKey] = {
           fileId: file.id,
           fileName: file.name,
@@ -2648,8 +2677,10 @@ async function loadKojiDocStatus(koji) {
 // 表示
 // ============================================================
 // 共通書類の状況を取得
-function getDocStatus(koji, docKey) {
-  const fileKey = `${koji.id}-common-${docKey}`;
+function getDocStatus(koji, docKey, changeNum = 0) {
+  const fileKey = changeNum > 0 
+    ? `${koji.id}-common-${docKey}-${changeNum}` 
+    : `${koji.id}-common-${docKey}`;
   return docFiles[fileKey] ? 'has' : 'missing';
 }
 
@@ -2685,12 +2716,28 @@ function countCompanyMissingDocs(koji, companyName) {
   return missing;
 }
 
+// 共通書類の変更分N回目が揃ってるか
+function isCommonChangeComplete(koji, changeNum) {
+  for (const dt of getCommonDocTypesChange(koji)) {
+    if (getDocStatus(koji, dt.key, changeNum) !== 'has') return false;
+  }
+  return true;
+}
+
 // 工事全体で不足してる書類数を数える
 function countMissingDocs(koji) {
   let missing = 0;
-  // 共通書類
+  // 共通書類のメイン
   for (const dt of getDocTypes(koji)) {
     if (getDocStatus(koji, dt.key) === 'missing') missing++;
+  }
+  // 共通書類の変更分
+  const commonChanges = koji.commonChanges || 0;
+  const commonChangeTypes = getCommonDocTypesChange(koji);
+  for (let i = 1; i <= commonChanges; i++) {
+    for (const dt of commonChangeTypes) {
+      if (getDocStatus(koji, dt.key, i) !== 'has') missing++;
+    }
   }
   // 会社書類（メイン4種の不足合計）
   if (koji.companies) {
@@ -2706,11 +2753,20 @@ function isAllDocsComplete(koji) {
   return countMissingDocs(koji) === 0;
 }
 
-// 工事全体の書類完了率を計算（共通書類+会社書類のメイン4種）
+// 工事全体の書類完了率を計算
 function calcCompletionRate(koji) {
   const docTypes = getDocTypes(koji);
   let total = docTypes.length;
   let done = docTypes.filter(dt => getDocStatus(koji, dt.key) === 'has').length;
+  // 共通書類の変更分
+  const commonChanges = koji.commonChanges || 0;
+  const commonChangeTypes = getCommonDocTypesChange(koji);
+  for (let i = 1; i <= commonChanges; i++) {
+    for (const dt of commonChangeTypes) {
+      total++;
+      if (getDocStatus(koji, dt.key, i) === 'has') done++;
+    }
+  }
   if (koji.companies) {
     for (const company of koji.companies) {
       total += COMPANY_DOC_TYPES.length; // 4種
@@ -3086,11 +3142,40 @@ function openDetailModal(id) {
 
 function renderDocList(koji) {
   const docTypes = getDocTypes(koji);
+  const commonChangeTypes = getCommonDocTypesChange(koji);
   
-  // 共通書類のHTML
-  const commonHtml = docTypes.map(d => {
-    return buildCommonDocRow(koji, d);
+  // 共通書類（メイン）のHTML
+  const commonMainHtml = docTypes.map(d => {
+    return buildCommonDocRow(koji, d, 0);
   }).join('');
+  
+  // 共通書類の変更分
+  const commonChanges = koji.commonChanges || 0;
+  let commonChangeHtml = '';
+  for (let i = 1; i <= commonChanges; i++) {
+    const changeComplete = isCommonChangeComplete(koji, i);
+    commonChangeHtml += `
+      <div class="change-section common-change-section">
+        <div class="change-header">
+          <span class="change-label">変更 ${i}</span>
+          ${changeComplete ? '<span class="change-status done">✓ 揃っています</span>' : '<span class="change-status pending">不足あり</span>'}
+          <button class="change-delete-btn" onclick="deleteCommonChange('${koji.id}', ${i})" title="この変更を削除">×</button>
+        </div>
+        ${commonChangeTypes.map(dt => buildCommonDocRow(koji, dt, i)).join('')}
+      </div>
+    `;
+  }
+  
+  // 変更分追加ボタン（変更対応の書類があるときだけ表示）
+  let addChangeBtn = '';
+  if (commonChangeTypes.length > 0) {
+    const changeLabels = commonChangeTypes.map(d => d.label).join('・');
+    addChangeBtn = `
+      <button class="add-change-btn" onclick="addCommonChange('${koji.id}')">
+        ＋ 変更分を追加（${changeLabels}）
+      </button>
+    `;
+  }
   
   // 会社書類セクション
   let companyHtml = '';
@@ -3106,9 +3191,11 @@ function renderDocList(koji) {
   `;
   
   document.getElementById('doc-list').innerHTML = `
-    ${commonHtml}
+    ${commonMainHtml}
+    ${commonChangeHtml}
+    ${addChangeBtn}
     <div class="company-section-divider">
-      <div class="company-section-title">━━ 会社ごとの注文書・請書 ━━</div>
+      <div class="company-section-title">━━ 会社ごとの書類 ━━</div>
     </div>
     ${companyHtml}
     ${addCompanyBtn}
@@ -3116,8 +3203,12 @@ function renderDocList(koji) {
 }
 
 // 共通書類1行
-function buildCommonDocRow(koji, d) {
-  const fileKey = `${koji.id}-common-${d.key}`;
+// changeNum: 0=メイン、1以上=変更N回目
+function buildCommonDocRow(koji, d, changeNum) {
+  changeNum = changeNum || 0;
+  const fileKey = changeNum > 0 
+    ? `${koji.id}-common-${d.key}-${changeNum}` 
+    : `${koji.id}-common-${d.key}`;
   const file = docFiles[fileKey];
   const status = file ? 'has' : 'missing';
   const icon = file ? '✓' : '!';
@@ -3132,7 +3223,7 @@ function buildCommonDocRow(koji, d) {
   // アップロード者バッジ
   let uploaderBadge = '';
   if (file) {
-    const metaKey = `common-${d.key}`;
+    const metaKey = changeNum > 0 ? `common-${d.key}-${changeNum}` : `common-${d.key}`;
     const meta = koji.docMeta ? koji.docMeta[metaKey] : null;
     const uploader = meta ? meta.uploadedBy : null;
     uploaderBadge = uploader 
@@ -3140,8 +3231,11 @@ function buildCommonDocRow(koji, d) {
       : `<span class="uploader-badge unknown">👤 不明</span>`;
   }
   
+  // 変更分は左マージンを付ける
+  const rowStyle = changeNum > 0 ? 'style="margin-left:24px;"' : '';
+  
   return `
-    <div class="doc-row ${status}">
+    <div class="doc-row ${status}" ${rowStyle}>
       <div class="doc-icon">${icon}</div>
       <div class="doc-info">
         <div class="doc-name-row">
@@ -3152,12 +3246,12 @@ function buildCommonDocRow(koji, d) {
       </div>
       <div class="doc-actions">
         ${file ? `
-          <button class="icon-btn" onclick="openPdfPreviewCommon('${koji.id}', '${d.key}')" title="プレビュー">🔍</button>
-          <button class="icon-btn" onclick="downloadFileCommon('${koji.id}', '${d.key}')" title="ダウンロード">↓</button>
-          <button class="icon-btn primary" onclick="triggerUploadCommon('${koji.id}', '${d.key}')" title="差し替え">↑</button>
-          <button class="icon-btn danger" onclick="deleteCommonDoc('${koji.id}', '${d.key}')" title="削除">🗑</button>
+          <button class="icon-btn" onclick="openPdfPreviewCommon('${koji.id}', '${d.key}', ${changeNum})" title="プレビュー">🔍</button>
+          <button class="icon-btn" onclick="downloadFileCommon('${koji.id}', '${d.key}', ${changeNum})" title="ダウンロード">↓</button>
+          <button class="icon-btn primary" onclick="triggerUploadCommon('${koji.id}', '${d.key}', ${changeNum})" title="差し替え">↑</button>
+          <button class="icon-btn danger" onclick="deleteCommonDoc('${koji.id}', '${d.key}', ${changeNum})" title="削除">🗑</button>
         ` : `
-          <button class="upload-btn-text" onclick="triggerUploadCommon('${koji.id}', '${d.key}')">↑ アップロード</button>
+          <button class="upload-btn-text" onclick="triggerUploadCommon('${koji.id}', '${d.key}', ${changeNum})">↑ アップロード</button>
         `}
       </div>
     </div>
@@ -3610,14 +3704,18 @@ async function deleteKoji() {
 // 書類削除
 // ============================================================
 // 共通書類の削除
-async function deleteCommonDoc(kojiId, docKey) {
-  const fileKey = `${kojiId}-common-${docKey}`;
+async function deleteCommonDoc(kojiId, docKey, changeNum) {
+  changeNum = changeNum || 0;
+  const fileKey = changeNum > 0 
+    ? `${kojiId}-common-${docKey}-${changeNum}` 
+    : `${kojiId}-common-${docKey}`;
   const file = docFiles[fileKey];
   if (!file) return;
   
   const koji = kojiList.find(k => k.id === kojiId);
   const docType = getDocTypes(koji).find(d => d.key === docKey);
-  const docLabel = docType ? docType.label : '書類';
+  const changeLabel = changeNum > 0 ? `（変更${changeNum}）` : '';
+  const docLabel = docType ? `${docType.label}${changeLabel}` : '書類';
   
   const ok = await showConfirm({
     title: '書類の削除',
@@ -4098,6 +4196,92 @@ async function deleteCompany(kojiId, companyName) {
   }
 }
 
+// ============================================================
+// 共通書類の変更分 追加/削除
+// ============================================================
+async function addCommonChange(kojiId) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji) return;
+  
+  koji.commonChanges = (koji.commonChanges || 0) + 1;
+  
+  try {
+    showToast('保存中...');
+    await saveKojiList();
+    addHistory(koji, 'common_change_add', `変更${koji.commonChanges}を追加`);
+    await saveKojiList();
+    refreshDetailView(koji);
+    showToast(`変更${koji.commonChanges}を追加しました`);
+  } catch (err) {
+    koji.commonChanges--;
+    console.error('共通変更追加エラー:', err);
+    showToast('保存に失敗しました', 'error');
+  }
+}
+
+async function deleteCommonChange(kojiId, changeNum) {
+  const koji = kojiList.find(k => k.id === kojiId);
+  if (!koji) return;
+  
+  // 最後の変更でないと削除できない
+  const currentChanges = koji.commonChanges || 0;
+  if (changeNum !== currentChanges) {
+    showToast('最後の変更のみ削除できます', 'error');
+    return;
+  }
+  
+  const commonChangeTypes = getCommonDocTypesChange(koji);
+  let fileCount = 0;
+  for (const dt of commonChangeTypes) {
+    const fileKey = `${kojiId}-common-${dt.key}-${changeNum}`;
+    if (docFiles[fileKey]) fileCount++;
+  }
+  
+  const ok = await showConfirm({
+    title: '変更を削除',
+    messageHtml: `<b>変更${changeNum}</b> を削除します。<br>` +
+                 (fileCount > 0 ? `<div style="margin-top:8px;color:var(--danger-fg);">関連する書類${fileCount}件もOneDriveから削除されます。</div>` : '') +
+                 `<br>この操作は取り消せません。`,
+    okText: '削除する',
+    cancelText: 'キャンセル',
+    type: 'danger'
+  });
+  if (!ok) return;
+  
+  try {
+    showToast('削除中...');
+    
+    // 関連ファイルを削除
+    for (const dt of commonChangeTypes) {
+      const fileKey = `${kojiId}-common-${dt.key}-${changeNum}`;
+      if (docFiles[fileKey]) {
+        try {
+          await graphApi('DELETE', `/drives/${sharedDriveId}/items/${docFiles[fileKey].fileId}`);
+        } catch (err) {
+          console.warn('ファイル削除失敗:', err);
+        }
+        delete docFiles[fileKey];
+      }
+      // docMetaからも削除
+      if (koji.docMeta) {
+        const metaKey = `common-${dt.key}-${changeNum}`;
+        delete koji.docMeta[metaKey];
+      }
+    }
+    
+    koji.commonChanges = currentChanges - 1;
+    addHistory(koji, 'common_change_delete', `変更${changeNum}を削除`);
+    await saveKojiList();
+    refreshDetailView(koji);
+    renderList();
+    renderStats();
+    showToast(`変更${changeNum}を削除しました`);
+  } catch (err) {
+    console.error('共通変更削除エラー:', err);
+    showToast('削除に失敗しました', 'error');
+  }
+}
+
 async function addCompanyChange(kojiId, companyName) {
   const koji = kojiList.find(k => k.id === kojiId);
   if (!koji || !koji.companies) return;
@@ -4186,8 +4370,8 @@ async function deleteCompanyChange(kojiId, companyName, changeNum) {
 // アップロード対象を識別する一時情報
 let uploadContext = null;
 
-function triggerUploadCommon(kojiId, docKey) {
-  uploadContext = { type: 'common', kojiId, docKey };
+function triggerUploadCommon(kojiId, docKey, changeNum) {
+  uploadContext = { type: 'common', kojiId, docKey, changeNum: changeNum || 0 };
   document.getElementById('upload-input').click();
 }
 
@@ -4233,9 +4417,13 @@ document.getElementById('upload-input').addEventListener('change', async functio
         e.target.value = '';
         return;
       }
-      fileKey = `${uploadContext.kojiId}-common-${uploadContext.docKey}`;
-      newFileName = `${docType.filePrefix}_${safeKojiName}_${timestamp}.pdf`;
-      docLabel = docType.label;
+      const changeNum = uploadContext.changeNum || 0;
+      const changePart = changeNum > 0 ? `_変更${changeNum}` : '';
+      fileKey = changeNum > 0 
+        ? `${uploadContext.kojiId}-common-${uploadContext.docKey}-${changeNum}` 
+        : `${uploadContext.kojiId}-common-${uploadContext.docKey}`;
+      newFileName = `${docType.filePrefix}${changePart}_${safeKojiName}_${timestamp}.pdf`;
+      docLabel = changeNum > 0 ? `${docType.label}（変更${changeNum}）` : docType.label;
     } else {
       // 会社書類
       const docType = COMPANY_DOC_TYPES.find(d => d.key === uploadContext.docKey);
@@ -4301,8 +4489,11 @@ document.getElementById('upload-input').addEventListener('change', async functio
 // ============================================================
 // ダウンロード
 // ============================================================
-async function downloadFileCommon(kojiId, docKey) {
-  const fileKey = `${kojiId}-common-${docKey}`;
+async function downloadFileCommon(kojiId, docKey, changeNum) {
+  changeNum = changeNum || 0;
+  const fileKey = changeNum > 0 
+    ? `${kojiId}-common-${docKey}-${changeNum}` 
+    : `${kojiId}-common-${docKey}`;
   await downloadFileGeneric(fileKey);
 }
 
@@ -4335,8 +4526,11 @@ async function downloadFileGeneric(fileKey) {
 // ============================================================
 // PDFプレビュー
 // ============================================================
-async function openPdfPreviewCommon(kojiId, docKey) {
-  const fileKey = `${kojiId}-common-${docKey}`;
+async function openPdfPreviewCommon(kojiId, docKey, changeNum) {
+  changeNum = changeNum || 0;
+  const fileKey = changeNum > 0 
+    ? `${kojiId}-common-${docKey}-${changeNum}` 
+    : `${kojiId}-common-${docKey}`;
   await openPdfPreviewGeneric(fileKey);
 }
 
