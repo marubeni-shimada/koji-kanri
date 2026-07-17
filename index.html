@@ -3743,6 +3743,18 @@ async function deleteKoji() {
   const koji = kojiList.find(k => k.id === currentKojiId);
   if (!koji) return;
   
+  // 権限チェック：管理者のみ
+  if (!isCurrentUserAdmin()) {
+    await showConfirm({
+      title: '削除できません',
+      message: '管理者ではないため削除できません',
+      okText: 'OK',
+      cancelText: null,
+      type: 'warning'
+    });
+    return;
+  }
+  
   // 関連書類の数（共通＋会社全部）
   let docCount = 0;
   for (const key of Object.keys(docFiles)) {
@@ -4290,6 +4302,18 @@ async function deleteCompany(kojiId, companyName) {
   const koji = kojiList.find(k => k.id === kojiId);
   if (!koji || !koji.companies) return;
   
+  // 権限チェック：管理者のみ
+  if (!isCurrentUserAdmin()) {
+    await showConfirm({
+      title: '削除できません',
+      message: '管理者ではないため削除できません',
+      okText: 'OK',
+      cancelText: null,
+      type: 'warning'
+    });
+    return;
+  }
+  
   let fileCount = 0;
   for (const key of Object.keys(docFiles)) {
     if (key.startsWith(`${kojiId}-company-${companyName}-`)) fileCount++;
@@ -4357,6 +4381,18 @@ async function addCommonChange(kojiId) {
 async function deleteCommonChange(kojiId, changeNum) {
   const koji = kojiList.find(k => k.id === kojiId);
   if (!koji) return;
+  
+  // 権限チェック：管理者のみ
+  if (!isCurrentUserAdmin()) {
+    await showConfirm({
+      title: '削除できません',
+      message: '管理者ではないため削除できません',
+      okText: 'OK',
+      cancelText: null,
+      type: 'warning'
+    });
+    return;
+  }
   
   // 最後の変更でないと削除できない
   const currentChanges = koji.commonChanges || 0;
@@ -4445,6 +4481,18 @@ async function deleteCompanyChange(kojiId, companyName, changeNum) {
   
   const company = koji.companies.find(c => c.name === companyName);
   if (!company) return;
+  
+  // 権限チェック：管理者のみ
+  if (!isCurrentUserAdmin()) {
+    await showConfirm({
+      title: '削除できません',
+      message: '管理者ではないため削除できません',
+      okText: 'OK',
+      cancelText: null,
+      type: 'warning'
+    });
+    return;
+  }
   
   // 最後の変更しか削除できない（番号の整合性のため）
   if (changeNum !== company.changes) {
@@ -4705,8 +4753,26 @@ async function openPdfPreviewGeneric(fileKey) {
     pdfDoc = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
     pdfPageNum = 1;
     
-    // ※ メタデータ打ち消しは環境によって逆効果になるので一旦無効化
-    // 意図しない向きの場合は ↺↻ボタンで手動調整してください
+    // 埋め込まれた回転メタデータを打ち消す
+    try {
+      const firstPage = await pdfDoc.getPage(1);
+      const embeddedRotate = firstPage.rotate || 0;
+      const vp = firstPage.getViewport({ scale: 1 });
+      console.log('[PDF開いた]', {
+        ファイル名: file.fileName,
+        埋め込み回転: embeddedRotate,
+        ページ幅: vp.width,
+        ページ高: vp.height,
+        向き: vp.width > vp.height ? '横長' : '縦長'
+      });
+      // メタデータに回転が入ってるなら打ち消す
+      if (embeddedRotate !== 0) {
+        pdfRotation = (360 - embeddedRotate) % 360;
+        console.log('[PDF] 回転メタデータを打ち消し:', pdfRotation);
+      }
+    } catch (err) {
+      console.warn('回転メタデータの取得に失敗:', err);
+    }
     
     const controls = document.getElementById('pdf-controls');
     controls.style.display = pdfDoc.numPages > 1 ? 'flex' : 'none';
