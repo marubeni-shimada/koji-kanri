@@ -908,6 +908,14 @@
     background: var(--danger-bg);
     color: var(--danger-fg);
   }
+  .staff-chip.admin-chip {
+    background: #FEF3C7;
+    border-color: #F59E0B;
+  }
+  .staff-chip.admin-chip .staff-chip-name {
+    color: #92400E;
+    font-weight: 500;
+  }
   
   /* 担当者カスタムドロップダウン */
   .staff-dropdown {
@@ -2028,6 +2036,19 @@
         </div>
         <div id="staff-field-list" class="staff-list"></div>
       </div>
+      
+      <div class="staff-section">
+        <div class="staff-section-header">
+          <div class="staff-section-title">🔑 管理者</div>
+          <div class="staff-count" id="staff-admins-count">0人</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">※管理者は自分以外のアップロードした書類も削除できます。名前は Microsoft 365 のアカウント表示名（例：田中 太郎）と完全一致で登録してください。</div>
+        <div class="staff-input-row">
+          <input type="text" id="staff-admins-input" class="form-input" placeholder="管理者の名前">
+          <button class="btn-primary" onclick="addStaff('admins')">＋ 追加</button>
+        </div>
+        <div id="staff-admins-list" class="staff-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2078,7 +2099,7 @@ const STAFF_ADMIN_PASSWORD = '0000';  // 担当者管理パスワード（ハー
 let staffAdminUnlocked = false;
 
 // スタッフリスト（OneDriveに永続化）
-let staffList = { sales: [], field: [] };
+let staffList = { sales: [], field: [], admins: [] };
 
 // 業務用アカウントの drive のIDをキャッシュ（起動時に取得）
 let sharedDriveId = null;
@@ -2589,13 +2610,14 @@ async function loadStaffList() {
     const text = await result.text();
     const data = JSON.parse(text);
     staffList = {
-      sales: Array.isArray(data.sales) ? data.sales : [],
-      field: Array.isArray(data.field) ? data.field : []
+      sales:  Array.isArray(data.sales)  ? data.sales  : [],
+      field:  Array.isArray(data.field)  ? data.field  : [],
+      admins: Array.isArray(data.admins) ? data.admins : []
     };
   } catch (err) {
     // ファイルが存在しない場合は空リストで初期化
     console.log('スタッフリストファイルなし、空で初期化');
-    staffList = { sales: [], field: [] };
+    staffList = { sales: [], field: [], admins: [] };
   }
 }
 
@@ -2615,6 +2637,32 @@ function getCurrentUserName() {
     return currentUser.name || currentUser.username || '不明';
   }
   return '不明';
+}
+
+// 現在のユーザーが管理者かどうか
+function isCurrentUserAdmin() {
+  const me = getCurrentUserName();
+  if (!me || me === '不明') return false;
+  return (staffList.admins || []).includes(me);
+}
+
+// この書類を削除する権限があるかどうか
+// アップロード者本人 or 管理者ならOK
+// 引数：uploaderName = 書類の uploadedBy 名
+function canDeleteDoc(uploaderName) {
+  if (isCurrentUserAdmin()) return true;
+  const me = getCurrentUserName();
+  if (!me || me === '不明') return false;
+  if (!uploaderName) return false;  // アップロード者不明の書類は管理者のみ削除可
+  return me === uploaderName;
+}
+
+// 削除権限がない時のエラーメッセージ
+function getDeleteDeniedMessage(uploaderName) {
+  if (!uploaderName) {
+    return `この書類はアップロード者が不明のため、管理者のみ削除できます。\n\n管理者の追加は「⚙ 担当者管理」から設定できます。`;
+  }
+  return `この書類は「${uploaderName}」がアップロードしたものです。\n\n削除できるのは以下の人だけです：\n・アップロードした本人（${uploaderName}）\n・管理者に登録されている人\n\n管理者の追加は「⚙ 担当者管理」から設定できます。`;
 }
 
 // 履歴を追加（自動記録）
@@ -3782,6 +3830,21 @@ async function deleteCommonDoc(kojiId, docKey, changeNum) {
   const changeLabel = changeNum > 0 ? `（変更${changeNum}）` : '';
   const docLabel = docType ? `${docType.label}${changeLabel}` : '書類';
   
+  // 権限チェック
+  const metaKey = changeNum > 0 ? `common-${docKey}-${changeNum}` : `common-${docKey}`;
+  const meta = koji.docMeta ? koji.docMeta[metaKey] : null;
+  const uploader = meta ? meta.uploadedBy : null;
+  if (!canDeleteDoc(uploader)) {
+    await showConfirm({
+      title: '削除できません',
+      message: getDeleteDeniedMessage(uploader),
+      okText: 'OK',
+      cancelText: null,
+      type: 'warning'
+    });
+    return;
+  }
+  
   const ok = await showConfirm({
     title: '書類の削除',
     message: `${docLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。\nこの操作は取り消せません。`,
@@ -3826,6 +3889,22 @@ async function deleteCompanyDoc(kojiId, companyName, docKey, changeNum) {
   const docLabel = docType ? docType.label : '書類';
   const changeLabel = changeNum > 0 ? ` (変更${changeNum})` : '';
   
+  // 権限チェック
+  const koji = kojiList.find(k => k.id === kojiId);
+  const metaKey = fileKey.substring(kojiId.length + 1);
+  const meta = koji && koji.docMeta ? koji.docMeta[metaKey] : null;
+  const uploader = meta ? meta.uploadedBy : null;
+  if (!canDeleteDoc(uploader)) {
+    await showConfirm({
+      title: '削除できません',
+      message: getDeleteDeniedMessage(uploader),
+      okText: 'OK',
+      cancelText: null,
+      type: 'warning'
+    });
+    return;
+  }
+  
   const ok = await showConfirm({
     title: '書類の削除',
     message: `${companyName} の ${docLabel}${changeLabel}「${file.fileName}」を削除します。\nOneDriveからも削除されます。`,
@@ -3839,11 +3918,10 @@ async function deleteCompanyDoc(kojiId, companyName, docKey, changeNum) {
     showToast('削除中...');
     await graphApi('DELETE', `/drives/${sharedDriveId}/items/${file.fileId}`);
     delete docFiles[fileKey];
-    const koji = kojiList.find(k => k.id === kojiId);
+    // koji は上で取得済み
     
     // docMetaからも削除
     if (koji && koji.docMeta) {
-      const metaKey = fileKey.substring(koji.id.length + 1);
       delete koji.docMeta[metaKey];
     }
     
@@ -4619,7 +4697,7 @@ async function openPdfPreviewGeneric(fileKey) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // 回転とズームをリセット
+  // 回転とズームをリセット（メタデータの回転は後で page 取得時に打ち消し）
   pdfRotation = 0;
   pdfZoom = 1.0;
   updateZoomInfo();
@@ -4634,6 +4712,19 @@ async function openPdfPreviewGeneric(fileKey) {
     const arrayBuffer = await blob.arrayBuffer();
     pdfDoc = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
     pdfPageNum = 1;
+    
+    // 埋め込まれた回転メタデータを打ち消すため、初期回転を反転値に
+    // 例：PDFに rotate:90 が埋まってる → pdfRotation = -90 (= 270) で相殺
+    try {
+      const firstPage = await pdfDoc.getPage(1);
+      const embeddedRotate = firstPage.rotate || 0;
+      if (embeddedRotate !== 0) {
+        // 打ち消し：合計が0になるように
+        pdfRotation = (360 - embeddedRotate) % 360;
+      }
+    } catch (err) {
+      console.warn('回転メタデータの取得に失敗:', err);
+    }
     
     const controls = document.getElementById('pdf-controls');
     controls.style.display = pdfDoc.numPages > 1 ? 'flex' : 'none';
@@ -4840,10 +4931,28 @@ function renderStaffList() {
       <button class="staff-chip-remove" onclick="removeStaff('field', ${escapeAttr(name)})" title="削除">×</button>
     </div>
   `).join('');
+  
+  // 管理者
+  const adminsList = staffList.admins || [];
+  const adminsEl = document.getElementById('staff-admins-list');
+  const adminsCount = document.getElementById('staff-admins-count');
+  if (adminsEl && adminsCount) {
+    adminsCount.textContent = `${adminsList.length}人`;
+    adminsEl.innerHTML = adminsList.map(name => `
+      <div class="staff-chip admin-chip">
+        <span class="staff-chip-name">🔑 ${escapeHtml(name)}</span>
+        <button class="staff-chip-remove" onclick="removeStaff('admins', ${escapeAttr(name)})" title="削除">×</button>
+      </div>
+    `).join('');
+  }
 }
 
 async function addStaff(type) {
-  const inputId = type === 'sales' ? 'staff-sales-input' : 'staff-field-input';
+  let inputId;
+  if (type === 'sales') inputId = 'staff-sales-input';
+  else if (type === 'field') inputId = 'staff-field-input';
+  else if (type === 'admins') inputId = 'staff-admins-input';
+  else return;
   const input = document.getElementById(inputId);
   const name = input.value.trim();
   if (!name) {
@@ -4851,6 +4960,9 @@ async function addStaff(type) {
     input.focus();
     return;
   }
+  
+  // 未初期化なら初期化
+  if (!Array.isArray(staffList[type])) staffList[type] = [];
   
   // 重複チェック
   if (staffList[type].includes(name)) {
@@ -4875,15 +4987,20 @@ async function addStaff(type) {
 }
 
 async function removeStaff(type, name) {
+  const typeLabel = type === 'sales' ? '営業担当' : type === 'field' ? '現場担当' : '管理者';
+  const extraNote = type === 'admins' 
+    ? '' 
+    : '\n\n※既存の工事に紐づいている担当者情報は変更されません。';
   const ok = await showConfirm({
-    title: '担当者を削除',
-    message: `「${name}」を${type === 'sales' ? '営業' : '現場'}担当リストから削除します。\n\n※既存の工事に紐づいている担当者情報は変更されません。`,
+    title: `${typeLabel}を削除`,
+    message: `「${name}」を${typeLabel}リストから削除します。${extraNote}`,
     okText: '削除する',
     cancelText: 'キャンセル',
     type: 'danger'
   });
   if (!ok) return;
   
+  if (!Array.isArray(staffList[type])) staffList[type] = [];
   const removed = staffList[type].slice();
   staffList[type] = staffList[type].filter(n => n !== name);
   
@@ -4902,11 +5019,15 @@ async function removeStaff(type, name) {
 document.addEventListener('DOMContentLoaded', () => {
   const salesInput = document.getElementById('staff-sales-input');
   const fieldInput = document.getElementById('staff-field-input');
+  const adminsInput = document.getElementById('staff-admins-input');
   if (salesInput) salesInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); addStaff('sales'); }
   });
   if (fieldInput) fieldInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); addStaff('field'); }
+  });
+  if (adminsInput) adminsInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addStaff('admins'); }
   });
 });
 
@@ -5243,13 +5364,23 @@ function showConfirm(options) {
       messageEl.textContent = options.message || '';
     }
     okBtn.textContent = options.okText || 'OK';
-    cancelBtn.textContent = options.cancelText || 'キャンセル';
+    // cancelText が明示的に null なら非表示、それ以外は表示
+    if (options.cancelText === null) {
+      cancelBtn.style.display = 'none';
+    } else {
+      cancelBtn.style.display = '';
+      cancelBtn.textContent = options.cancelText || 'キャンセル';
+    }
     
     // タイプによってアイコンと色を変える
     if (options.type === 'danger') {
       iconEl.textContent = '🗑';
       iconEl.className = 'confirm-icon danger';
       okBtn.className = 'btn-primary danger';
+    } else if (options.type === 'warning') {
+      iconEl.textContent = '🚫';
+      iconEl.className = 'confirm-icon';
+      okBtn.className = 'btn-primary';
     } else {
       iconEl.textContent = '⚠';
       iconEl.className = 'confirm-icon';
