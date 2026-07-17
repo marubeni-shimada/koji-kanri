@@ -4896,11 +4896,10 @@ async function openPdfPreviewGeneric(fileKey) {
         表示高: vp.height,
         向き: vp.width > vp.height ? '横長' : '縦長'
       });
-      // 埋め込み回転を打ち消す（360から引いた値を追加）
-      // 例：embedded=90 → +270で合計360=0 → 打ち消し
-      //     embedded=270 → +90で合計360=0 → 打ち消し
+      // 埋め込み回転を打ち消して縦向きに表示
+      // 前回テストで(360-embedded)だと上下反転したので、embedded自体を追加する
       if (embeddedRotate !== 0) {
-        pdfRotation = (360 - embeddedRotate) % 360;
+        pdfRotation = embeddedRotate;
         console.log('[PDF] 埋め込み回転', embeddedRotate, 'を打ち消すため', pdfRotation, '度を追加');
       }
     } catch (err) {
