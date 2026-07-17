@@ -2042,7 +2042,7 @@
           <div class="staff-section-title">🔑 管理者</div>
           <div class="staff-count" id="staff-admins-count">0人</div>
         </div>
-        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">※管理者は自分以外のアップロードした書類も削除できます。名前は Microsoft 365 のアカウント表示名（例：田中 太郎）と完全一致で登録してください。</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;">※管理者だけが書類を削除できます。名前は Microsoft 365 のアカウント表示名（画面右上に表示されている名前）と完全一致で登録してください。</div>
         <div class="staff-input-row">
           <input type="text" id="staff-admins-input" class="form-input" placeholder="管理者の名前">
           <button class="btn-primary" onclick="addStaff('admins')">＋ 追加</button>
@@ -2647,22 +2647,14 @@ function isCurrentUserAdmin() {
 }
 
 // この書類を削除する権限があるかどうか
-// アップロード者本人 or 管理者ならOK
-// 引数：uploaderName = 書類の uploadedBy 名
+// 管理者リストに登録されてる人だけ削除可能
 function canDeleteDoc(uploaderName) {
-  if (isCurrentUserAdmin()) return true;
-  const me = getCurrentUserName();
-  if (!me || me === '不明') return false;
-  if (!uploaderName) return false;  // アップロード者不明の書類は管理者のみ削除可
-  return me === uploaderName;
+  return isCurrentUserAdmin();
 }
 
 // 削除権限がない時のエラーメッセージ
 function getDeleteDeniedMessage(uploaderName) {
-  if (!uploaderName) {
-    return `この書類はアップロード者が不明のため、管理者のみ削除できます。\n\n管理者の追加は「⚙ 担当者管理」から設定できます。`;
-  }
-  return `この書類は「${uploaderName}」がアップロードしたものです。\n\n削除できるのは以下の人だけです：\n・アップロードした本人（${uploaderName}）\n・管理者に登録されている人\n\n管理者の追加は「⚙ 担当者管理」から設定できます。`;
+  return `管理者ではないため削除できません`;
 }
 
 // 履歴を追加（自動記録）
@@ -4713,18 +4705,8 @@ async function openPdfPreviewGeneric(fileKey) {
     pdfDoc = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
     pdfPageNum = 1;
     
-    // 埋め込まれた回転メタデータを打ち消すため、初期回転を反転値に
-    // 例：PDFに rotate:90 が埋まってる → pdfRotation = -90 (= 270) で相殺
-    try {
-      const firstPage = await pdfDoc.getPage(1);
-      const embeddedRotate = firstPage.rotate || 0;
-      if (embeddedRotate !== 0) {
-        // 打ち消し：合計が0になるように
-        pdfRotation = (360 - embeddedRotate) % 360;
-      }
-    } catch (err) {
-      console.warn('回転メタデータの取得に失敗:', err);
-    }
+    // ※ メタデータ打ち消しは環境によって逆効果になるので一旦無効化
+    // 意図しない向きの場合は ↺↻ボタンで手動調整してください
     
     const controls = document.getElementById('pdf-controls');
     controls.style.display = pdfDoc.numPages > 1 ? 'flex' : 'none';
