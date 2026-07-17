@@ -797,6 +797,42 @@
     color: #888780;
   }
   
+  /* 書類チェックリスト */
+  .doc-checklist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .doc-checklist-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: white;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .doc-checklist-item input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
+  .doc-checklist-item.checked {
+    background: #E6F1FB;
+    border-color: var(--primary);
+    color: #0C447C;
+  }
+  .doc-checklist-item.unchecked {
+    background: #FAFAF7;
+    color: var(--text-tertiary);
+  }
+  
   /* スタッフ管理モーダル */
   .staff-section {
     margin-bottom: 24px;
@@ -1860,6 +1896,12 @@
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">※種別によって必要な書類が変わります（公共（元）=元請け、公共（下）=下請け）</div>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">必要な書類</label>
+        <div class="doc-checklist" id="new-doc-checklist"></div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">※不要な書類はチェックを外してください（後から編集画面で変更できます）</div>
+      </div>
+
       <div class="form-grid-2">
         <div>
           <label class="form-label">工事番号<span class="optional-mark">任意</span></label>
@@ -2123,13 +2165,26 @@ function normalizeKojiType(type) {
   return '公共（元）';  // デフォルト
 }
 
-// 工事種別に応じた共通書類タイプを返す
-function getDocTypes(koji) {
-  if (!koji) return DOC_TYPES_PUBLIC_MOTO;
-  const t = normalizeKojiType(koji.type);
+// 工事種別に応じた共通書類タイプを返す（全部）
+function getAllDocTypesForType(type) {
+  const t = normalizeKojiType(type);
   if (t === '民間') return DOC_TYPES_MINKAN;
   if (t === '公共（下）') return DOC_TYPES_PUBLIC_SHITA;
   return DOC_TYPES_PUBLIC_MOTO;
+}
+
+// 工事の全書類（除外含む）を返す
+function getAllDocTypes(koji) {
+  if (!koji) return DOC_TYPES_PUBLIC_MOTO;
+  return getAllDocTypesForType(koji.type);
+}
+
+// 工事に対して有効な書類（除外を反映）を返す
+function getDocTypes(koji) {
+  if (!koji) return DOC_TYPES_PUBLIC_MOTO;
+  const all = getAllDocTypes(koji);
+  const disabled = koji.disabledDocs || [];
+  return all.filter(d => !disabled.includes(d.key));
 }
 
 // 互換性のため：旧コードが参照する DOC_TYPES（デフォルトは公共（元）向け）
@@ -3120,22 +3175,11 @@ function openDetailModal(id) {
   renderHistory(koji);
   updateUnreadBadge(koji);
   
-  // 履歴パネルの開閉：未読がある時だけ自動で開く
-  const unreadCount = countUnreadHistory(koji);
+  // 履歴パネルは常に閉じた状態で開く（ボタンを押した時だけ開く）
   const split = document.getElementById('detail-modal-split');
   const btn = document.getElementById('history-toggle-btn');
-  if (unreadCount > 0) {
-    // 未読あり → 自動で開く
-    split.classList.remove('history-collapsed');
-    btn.classList.add('active');
-    // 開いた瞬間に既読扱い
-    markHistoryAsRead(koji.id);
-    updateUnreadBadge(koji);
-  } else {
-    // 未読なし → 閉じたまま
-    split.classList.add('history-collapsed');
-    btn.classList.remove('active');
-  }
+  split.classList.add('history-collapsed');
+  btn.classList.remove('active');
   
   document.getElementById('detail-modal').classList.add('active');
 }
@@ -3396,10 +3440,26 @@ function renderKojiInfo(koji) {
         <input type="hidden" id="edit-sales" value="${escapeHtml(koji.sales || '')}">
       </div>
       <div class="label">登録日</div><div style="font-size:12px;color:var(--text-secondary);">${koji.createdAt ? new Date(koji.createdAt).toLocaleDateString('ja-JP') : '-'}</div>
+      <div class="label" style="align-self:flex-start;padding-top:6px;">必要書類</div>
+      <div>
+        <div class="doc-checklist" id="edit-doc-checklist"></div>
+        <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px;">※不要な書類はチェックを外してください</div>
+      </div>
     `;
     // 担当者カスタムドロップダウンを初期化
     initStaffDropdown('edit-sales-dropdown', koji.sales || '');
     initStaffDropdown('edit-field-dropdown', koji.field || '');
+    
+    // 書類チェックリストを初期化（現在の除外設定を反映）
+    renderDocChecklist('edit-doc-checklist', koji.type, koji.disabledDocs || []);
+    
+    // 種別変更で書類チェックリストを再描画（除外リセット）
+    document.querySelectorAll('input[name="edit-type"]').forEach(r => {
+      r.onchange = () => {
+        const t = document.querySelector('input[name="edit-type"]:checked').value;
+        renderDocChecklist('edit-doc-checklist', t, []);
+      };
+    });
     
     document.getElementById('edit-koji-btn').textContent = '保存';
     document.getElementById('edit-koji-btn').classList.add('primary-action');
@@ -3463,7 +3523,8 @@ async function toggleEditKoji() {
       number: document.getElementById('edit-number').value.trim(),
       client: document.getElementById('edit-client').value.trim(),
       field: document.getElementById('edit-field').value.trim(),
-      sales: document.getElementById('edit-sales').value.trim()
+      sales: document.getElementById('edit-sales').value.trim(),
+      disabledDocs: getDisabledDocsFromChecklist('edit-doc-checklist')
     };
     
     // 工事名が変更されたら、OneDriveのフォルダ名も変更が必要
@@ -4866,8 +4927,67 @@ function openNewModal() {
   
   // 種別はデフォルト「公共（元）」
   document.querySelector('input[name="new-type"][value="公共（元）"]').checked = true;
+  
+  // 書類チェックリストを初期化（デフォルト全チェック）
+  renderDocChecklist('new-doc-checklist', '公共（元）', []);
+  
+  // 種別変更で書類チェックリストを再描画（除外リセット）
+  document.querySelectorAll('input[name="new-type"]').forEach(r => {
+    r.onchange = () => {
+      const t = document.querySelector('input[name="new-type"]:checked').value;
+      renderDocChecklist('new-doc-checklist', t, []);
+    };
+  });
+  
   document.getElementById('new-modal').classList.add('active');
   setTimeout(() => document.getElementById('new-name').focus(), 100);
+}
+
+// 書類チェックリストを描画
+// containerId: 描画先のdiv id
+// kojiType: 工事種別
+// disabledKeys: 初期状態で外れているキー配列
+function renderDocChecklist(containerId, kojiType, disabledKeys) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  disabledKeys = disabledKeys || [];
+  const docTypes = getAllDocTypesForType(kojiType);
+  container.innerHTML = docTypes.map(d => {
+    const checked = !disabledKeys.includes(d.key);
+    return `
+      <label class="doc-checklist-item ${checked ? 'checked' : 'unchecked'}" data-key="${d.key}">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="onDocChecklistChange(this)">
+        <span>${escapeHtml(d.label)}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+// チェック変更時にスタイルを更新
+function onDocChecklistChange(el) {
+  const label = el.closest('.doc-checklist-item');
+  if (!label) return;
+  if (el.checked) {
+    label.classList.add('checked');
+    label.classList.remove('unchecked');
+  } else {
+    label.classList.remove('checked');
+    label.classList.add('unchecked');
+  }
+}
+
+// チェックリストから「外れてる書類キー」の配列を取得
+function getDisabledDocsFromChecklist(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  const disabled = [];
+  container.querySelectorAll('.doc-checklist-item').forEach(label => {
+    const cb = label.querySelector('input[type="checkbox"]');
+    if (cb && !cb.checked) {
+      disabled.push(label.dataset.key);
+    }
+  });
+  return disabled;
 }
 
 // カスタムドロップダウンの初期化
@@ -5014,6 +5134,7 @@ async function saveNewKoji() {
       client: document.getElementById('new-client').value.trim(),
       sales: document.getElementById('new-sales').value.trim(),
       field: document.getElementById('new-field').value.trim(),
+      disabledDocs: getDisabledDocsFromChecklist('new-doc-checklist'),
       companies: [],
       history: [],
       createdAt: new Date().toISOString()
