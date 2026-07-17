@@ -4883,13 +4883,11 @@ async function openPdfPreviewGeneric(fileKey) {
     pdfDoc = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
     pdfPageNum = 1;
     
-    // 埋め込まれた回転メタデータを補正
-    // PDF.jsは自動でメタデータの回転を適用するので、
-    // 横長ページなのに縦長で表示される場合は、90度追加して横に戻す
+    // PDFの埋め込み回転メタデータを打ち消して、
+    // アップロードされたPDFの元の状態で表示する
     try {
       const firstPage = await pdfDoc.getPage(1);
       const embeddedRotate = firstPage.rotate || 0;
-      // rotation:0 で取得したビューポート（=PDF.jsが適用済みの向き）
       const vp = firstPage.getViewport({ scale: 1 });
       console.log('[PDF開いた]', {
         ファイル名: file.fileName,
@@ -4898,15 +4896,12 @@ async function openPdfPreviewGeneric(fileKey) {
         表示高: vp.height,
         向き: vp.width > vp.height ? '横長' : '縦長'
       });
-      // 埋め込み回転が90/270（=90度単位で回転指定されてる）場合、
-      // それを打ち消して本来の向きに戻す：pdfRotation に embedded と同じ値を入れる
-      // これで PDF.js の内部処理と合算されて 2倍回転 → 実質的にキャンセル効果
-      if (embeddedRotate === 90 || embeddedRotate === 270) {
-        // 90度追加すると縦向きになる場合が多い
-        pdfRotation = 90;
-        console.log('[PDF] 縦向きに補正するため回転90度を追加');
-      } else if (embeddedRotate === 180) {
-        pdfRotation = 180;
+      // 埋め込み回転を打ち消す（360から引いた値を追加）
+      // 例：embedded=90 → +270で合計360=0 → 打ち消し
+      //     embedded=270 → +90で合計360=0 → 打ち消し
+      if (embeddedRotate !== 0) {
+        pdfRotation = (360 - embeddedRotate) % 360;
+        console.log('[PDF] 埋め込み回転', embeddedRotate, 'を打ち消すため', pdfRotation, '度を追加');
       }
     } catch (err) {
       console.warn('回転メタデータの取得に失敗:', err);
